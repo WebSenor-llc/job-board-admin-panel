@@ -40,6 +40,38 @@ export interface IMember {
   avatar?: string;
 }
 
+// Employer Types
+export interface IEmployer {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  mobile?: string;
+  isActive: boolean;
+  isVerified: boolean;
+  designation?: string;
+  department?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Candidate Types
+export interface ICandidate {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  resumeUrl?: string;
+  skills?: string[];
+  experience?: string;
+  status: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Post Types
 export interface IPost {
   id: string;
@@ -77,14 +109,14 @@ export interface IFlaggedPost {
 }
 
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
   errors?: Record<string, string[]>;
 }
 
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   data: T[];
   total: number;
   page: number;
@@ -112,14 +144,14 @@ export interface IAnalytics {
 }
 
 // Table Types
-export interface TableColumn<T = any> {
+export interface TableColumn<T = unknown> {
   key: string;
   label: string;
   sortable?: boolean;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (value: unknown, row: T) => React.ReactNode;
 }
 
-export interface TableAction<T = any> {
+export interface TableAction<T = unknown> {
   label: string;
   onClick: (row: T) => void;
   icon?: React.ReactNode;
@@ -134,5 +166,5 @@ export interface FormField {
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];
-  validation?: any;
+  validation?: unknown;
 }

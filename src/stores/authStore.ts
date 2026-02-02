@@ -4,17 +4,25 @@ import http from '@/api/http';
 import endpoints from '@/api/endpoints';
 
 export interface User {
-  id: string;
   name: string;
+  userId: string;
   email: string;
   role: string;
-  permissions: string[];
+  firstName: string;
+  lastName: string;
+  mobile?: string;
+  isVerified: boolean;
+  isMobileVerified: boolean;
+  onboardingStep: number;
+  isOnboardingCompleted: boolean;
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   token: string | null;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
@@ -27,18 +35,24 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       token: null,
+      _hasHydrated: false,
+      setHasHydrated: (state: boolean) => {
+        set({ _hasHydrated: state });
+      },
       login: async (email: string, password: string) => {
-        try {
-          const response = await http.post<{ data: { user: User; token: string } }>(
-            endpoints.auth.login,
-            { email, password }
-          );
-          const { user, token } = response as any;
-          localStorage.setItem('token', token);
-          set({ user, isAuthenticated: true, token });
-        } catch (error) {
-          throw error;
+        // API returns: { data: { accessToken, user, expiresIn }, message, status, statusCode }
+        const response = await http.post<{
+          data: { accessToken: string; user: User; expiresIn?: number };
+        }>(endpoints.auth.login, { email, password });
+
+        const { accessToken, user } = response.data;
+
+        if (!accessToken) {
+          throw new Error('No token received from server');
         }
+
+        localStorage.setItem('token', accessToken);
+        set({ user, isAuthenticated: true, token: accessToken });
       },
       logout: () => {
         localStorage.removeItem('token');
@@ -57,8 +71,12 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        token: state.token
+        token: state.token,
       }),
-    }
-  )
+      onRehydrateStorage: () => (state) => {
+        // Called after rehydration completes
+        state?.setHasHydrated(true);
+      },
+    },
+  ),
 );
