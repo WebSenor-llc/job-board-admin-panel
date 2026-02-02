@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit, Trash2, Building2, CheckCircle, XCircle } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useThrottle } from '@/hooks/useThrottle';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,27 +67,28 @@ export default function EmployersListPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteEmployerId, setDeleteEmployerId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 500); // Debounce search input by 500ms
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [formData, setFormData] = useState<EmployerFormData>(initialFormData);
   const [editingEmployer, setEditingEmployer] = useState<IEmployer | null>(null);
 
-  // Fetch employers list with pagination
+  // Fetch employers list with pagination (uses debounced search to reduce API calls)
   const { data: employersData, isLoading } = useQuery({
-    queryKey: ['employers', page, limit, searchQuery],
+    queryKey: ['employers', page, limit, debouncedSearchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        ...(searchQuery && { search: searchQuery }),
+        ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
       });
       const response = await http.get(`${endpoints.employer.list}?${params}`);
       return response;
     },
   });
 
-  const employers: IEmployer[] = employersData?.data?.data || [];
-  const pagination = employersData?.data?.pagination || {};
+  const employers: IEmployer[] = employersData?.data || [];
+  const pagination = employersData?.pagination || {};
   const total = pagination.totalEmployers || 0;
   const totalPages = pagination.pageCount || 1;
   const hasNextPage = pagination.hasNextPage || false;
@@ -148,7 +151,8 @@ export default function EmployersListPage() {
     },
   });
 
-  const handleCreate = () => {
+  // Throttled create handler - prevents double-click submissions (2 second delay)
+  const handleCreate = useThrottle(() => {
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
       toast.error('Please fill in all required fields');
       return;
@@ -162,7 +166,7 @@ export default function EmployersListPage() {
       return;
     }
     createMutation.mutate(formData);
-  };
+  }, 2000);
 
   const handleEdit = (employer: IEmployer) => {
     setEditingEmployer(employer);
@@ -177,18 +181,20 @@ export default function EmployersListPage() {
     setIsEditOpen(true);
   };
 
-  const handleUpdate = () => {
+  // Throttled update handler - prevents double-click submissions (2 second delay)
+  const handleUpdate = useThrottle(() => {
     if (!editingEmployer) return;
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
     updateMutation.mutate({ id: editingEmployer.id, data: formData });
-  };
+  }, 2000);
 
-  const handleDelete = (id: string) => {
+  // Throttled delete handler - prevents accidental double-clicks (2 second delay)
+  const handleDelete = useThrottle((id: string) => {
     deleteMutation.mutate(id);
-  };
+  }, 2000);
 
   const handleCloseCreateDialog = () => {
     setIsCreateOpen(false);
