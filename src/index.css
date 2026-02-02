@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Admin Panel Design System */
+    --background: 250 20% 99%;
+    --foreground: 215 25% 27%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    /* Modern blue accent system */
+    --primary: 214 84% 56%;
+    --primary-foreground: 0 0% 100%;
+    --primary-muted: 214 84% 96%;
+
+    --secondary: 220 13% 96%;
+    --secondary-foreground: 215 25% 27%;
+
+    --muted: 220 13% 96%;
+    --muted-foreground: 215 10% 50%;
+
+    --accent: 214 84% 96%;
+    --accent-foreground: 214 84% 56%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 143 64% 47%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 214 84% 56%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar system */
+    --sidebar-background: 220 15% 97%;
+    --sidebar-foreground: 215 25% 27%;
+    --sidebar-primary: 214 84% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 13% 93%;
+    --sidebar-accent-foreground: 215 25% 27%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 214 84% 56%;
+
+    /* Admin specific tokens */
+    --admin-surface: 0 0% 100%;
+    --admin-surface-hover: 220 13% 98%;
+    --admin-border-subtle: 220 13% 94%;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+
+  .dark {
+    --background: 215 28% 17%;
+    --foreground: 213 31% 91%;
+
+    --card: 215 28% 17%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 215 28% 17%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 214 84% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 215 27% 22%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 215 27% 22%;
+    --muted-foreground: 217 10% 64%;
+
+    --accent: 215 27% 22%;
+    --accent-foreground: 213 31% 91%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 213 31% 91%;
+
+    --border: 215 27% 22%;
+    --input: 215 27% 22%;
+    --ring: 214 84% 56%;
+
+    --sidebar-background: 215 30% 15%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-primary: 214 84% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 27% 20%;
+    --sidebar-accent-foreground: 213 31% 91%;
+    --sidebar-border: 215 27% 20%;
+    --sidebar-ring: 214 84% 56%;
+
+    --admin-surface: 215 28% 17%;
+    --admin-surface-hover: 215 27% 22%;
+    --admin-border-subtle: 215 27% 25%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

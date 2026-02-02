@@ -1,0 +1,60 @@
+const endpoints = {
+  auth: {
+    login: "/auth/admin/login",
+    sendOtp: "/auth/admin/send-otp",
+    verifyOtp: "/auth/admin/verify-otp",
+    logout: "/auth/admin/logout",
+  },
+  role: {
+    create: "/admin/role",
+    list: "/admin/role/list",
+    getPermissions: "/admin/permission",
+    getOptions: "/admin/role/options",
+    details: (id: string) => `/admin/role/${id}`,
+    update: (id: string) => `/admin/role/${id}`,
+    delete: (id: string) => `/admin/role/${id}`,
+  },
+  user: {
+    create: "/admin/user",
+    list: "/admin/user/list",
+    details: (id: string) => `/admin/user/${id}`,
+    update: (id: string) => `/admin/user/${id}`,
+    delete: (id: string) => `/admin/user/${id}`,
+    restore: (id: string) => `/admin/user/restore/${id}`,
+  },
+  member: {
+    create: "/admin/member",
+    list: "/admin/member/list",
+    details: (id: string) => `/admin/member/${id}`,
+    update: (id: string) => `/admin/member/${id}`,
+    delete: (id: string) => `/admin/member/${id}`,
+    restore: (id: string) => `/admin/member/restore/${id}`,
+  },
+  post: {
+    create: "/admin/post",
+    list: "/admin/post/list",
+    details: (id: string) => `/admin/post/${id}`,
+    update: (id: string) => `/admin/post/${id}`,
+    delete: (id: string) => `/admin/post/${id}`,
+    approve: (id: string) => `/admin/post/${id}/approve`,
+    reject: (id: string) => `/admin/post/${id}/reject`,
+  },
+  moderation: {
+    list: "/admin/moderation/list",
+    approve: (id: string) => `/admin/moderation/${id}/approve`,
+    reject: (id: string) => `/admin/moderation/${id}/reject`,
+    details: (id: string) => `/admin/moderation/${id}`,
+  },
+  dashboard: {
+    stats: "/admin/dashboard/stats",
+    recentActivity: "/admin/dashboard/recent-activity",
+    analytics: "/admin/dashboard/analytics",
+  },
+  attachment: {
+    upload: "/admin/attachment/upload",
+    view: (fileName: string) => `/attachment/view/${fileName}`,
+    delete: "/admin/attachment/delete",
+  },
+};
+
+export default endpoints;
