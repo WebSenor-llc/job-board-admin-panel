@@ -38,6 +38,7 @@ import {
 import http from '@/api/http';
 import endpoints from '@/api/endpoints';
 import type { IEmployer } from '@/types/index';
+import { isDeletedUser, getEffectiveActiveStatus } from '@/lib/deletedUser';
 
 interface EmployerFormData {
   firstName: string;
@@ -48,6 +49,15 @@ interface EmployerFormData {
   department?: string;
   password?: string;
   confirmPassword?: string;
+}
+
+interface EmployerApiResponse {
+  data: IEmployer[];
+  pagination: {
+    totalEmployers: number;
+    pageCount: number;
+    hasNextPage: boolean;
+  };
 }
 
 const initialFormData: EmployerFormData = {
@@ -83,15 +93,15 @@ export default function EmployersListPage() {
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
       });
       const response = await http.get(`${endpoints.employer.list}?${params}`);
-      return response;
+      return response as unknown as EmployerApiResponse;
     },
   });
 
   const employers: IEmployer[] = employersData?.data || [];
-  const pagination = employersData?.pagination || {};
-  const total = pagination.totalEmployers || 0;
-  const totalPages = pagination.pageCount || 1;
-  const hasNextPage = pagination.hasNextPage || false;
+  const pagination = employersData?.pagination;
+  const total = pagination?.totalEmployers || 0;
+  const totalPages = pagination?.pageCount || 1;
+  const hasNextPage = pagination?.hasNextPage || false;
 
   // Create employer mutation
   const getErrorMessage = (error: unknown) => {
@@ -454,21 +464,55 @@ export default function EmployersListPage() {
                           {employer.firstName} {employer.lastName}
                         </div>
                       </TableCell>
-                      <TableCell>{employer.email}</TableCell>
+                      <TableCell>
+                        {isDeletedUser(employer.email) ? (
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground italic">Deleted User</span>
+                            <span
+                              className="text-xs text-muted-foreground/60 truncate max-w-[200px]"
+                              title={employer.email}
+                            >
+                              {employer.email}
+                            </span>
+                          </div>
+                        ) : (
+                          employer.email
+                        )}
+                      </TableCell>
                       <TableCell>{employer.mobile || 'N/A'}</TableCell>
                       <TableCell>{employer.designation || 'N/A'}</TableCell>
                       <TableCell>{employer.department || 'N/A'}</TableCell>
-                      <TableCell>{getStatusBadge(employer.isActive)}</TableCell>
+                      <TableCell>
+                        {getStatusBadge(
+                          getEffectiveActiveStatus(employer.email, employer.isActive),
+                        )}
+                      </TableCell>
                       <TableCell>{formatDate(employer.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(employer)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(employer)}
+                            disabled={isDeletedUser(employer.email)}
+                            title={
+                              isDeletedUser(employer.email)
+                                ? 'Cannot edit deleted user'
+                                : 'Edit employer'
+                            }
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setDeleteEmployerId(employer.id)}
+                            disabled={isDeletedUser(employer.email)}
+                            title={
+                              isDeletedUser(employer.email)
+                                ? 'User already deleted'
+                                : 'Delete employer'
+                            }
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
