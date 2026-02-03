@@ -20,6 +20,9 @@ const MembersListPage = lazy(() => import('@/pages/members/MembersListPage'));
 const CandidatesListPage = lazy(() => import('@/pages/members/CandidatesListPage'));
 const EmployersListPage = lazy(() => import('@/pages/members/EmployersListPage'));
 
+// Companies
+const CompaniesListPage = lazy(() => import('@/pages/companies/CompaniesListPage'));
+
 // Moderation
 const ModerationListPage = lazy(() => import('@/pages/moderation/ModerationListPage'));
 
@@ -63,6 +66,10 @@ const allRoutes = [
   {
     path: routePath.MEMBER.EMPLOYERS,
     element: <EmployersListPage />,
+  },
+  {
+    path: routePath.COMPANY.LIST,
+    element: <CompaniesListPage />,
   },
   {
     path: routePath.MODERATION.LIST,

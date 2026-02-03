@@ -42,11 +42,11 @@ const adminItems = [
     url: routePath.MEMBER.LIST,
     icon: UserPlus,
     subItems: [
-      { title: 'All Members', url: routePath.MEMBER.LIST, icon: UserPlus },
       { title: 'Candidates', url: routePath.MEMBER.CANDIDATES, icon: UserCircle },
       { title: 'Employers', url: routePath.MEMBER.EMPLOYERS, icon: Building2 },
     ],
   },
+  { title: 'Companies', url: routePath.COMPANY.LIST, icon: Building2 },
   { title: 'Post Moderation', url: routePath.MODERATION.LIST, icon: Flag },
 ];
 

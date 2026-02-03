@@ -69,6 +69,17 @@ const endpoints = {
     update: (id: string) => `/admin/users/${id}`,
     delete: (id: string) => `/admin/users/${id}`,
   },
+  company: {
+    create: '/companies',
+    list: '/companies',
+    me: '/companies/me',
+    details: (id: string) => `/companies/${id}`,
+    detailsBySlug: (slug: string) => `/companies/slug/${slug}`,
+    update: (id: string) => `/companies/${id}`,
+    delete: (id: string) => `/companies/${id}`,
+    uploadLogo: (id: string) => `/companies/${id}/logo`,
+    uploadBanner: (id: string) => `/companies/${id}/banner`,
+  },
 };
 
 export default endpoints;

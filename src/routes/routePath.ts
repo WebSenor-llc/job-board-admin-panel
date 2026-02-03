@@ -32,6 +32,12 @@ const routePath = {
     EDIT: '/posts/edit/:id',
     DETAILS: '/posts/details/:id',
   },
+  COMPANY: {
+    LIST: '/companies/list',
+    CREATE: '/companies/create',
+    EDIT: '/companies/edit/:id',
+    DETAILS: '/companies/details/:id',
+  },
 };
 
 export default routePath;

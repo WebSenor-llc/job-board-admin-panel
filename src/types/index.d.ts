@@ -72,6 +72,45 @@ export interface ICandidate {
   updatedAt?: string;
 }
 
+// Company Types
+export type CompanySize = '1-10' | '11-50' | '51-200' | '201-500' | '500+';
+export type CompanyType = 'startup' | 'sme' | 'mnc' | 'government';
+export type VerificationStatus = 'pending' | 'verified' | 'rejected';
+
+export interface ICompany {
+  isActive: boolean;
+  id: string;
+  userId?: string;
+  name: string;
+  slug?: string;
+  industry?: string;
+  companySize?: CompanySize;
+  companyType?: CompanyType;
+  yearEstablished?: number;
+  website?: string;
+  description?: string;
+  mission?: string;
+  culture?: string;
+  benefits?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
+  tagline?: string;
+  headquarters?: string;
+  employeeCount?: number;
+  linkedinUrl?: string;
+  twitterUrl?: string;
+  facebookUrl?: string;
+  panNumber?: string;
+  gstNumber?: string;
+  cinNumber?: string;
+  kycDocuments?: string;
+  isVerified: boolean;
+  verificationStatus?: VerificationStatus;
+  verificationDocuments?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Post Types
 export interface IPost {
   id: string;
