@@ -62,6 +62,13 @@ const endpoints = {
     update: (id: string) => `/admin/employers/${id}`,
     delete: (id: string) => `/admin/employers/${id}`,
   },
+  candidate: {
+    create: '/admin/users',
+    list: '/admin/users',
+    details: (id: string) => `/admin/users/${id}`,
+    update: (id: string) => `/admin/users/${id}`,
+    delete: (id: string) => `/admin/users/${id}`,
+  },
 };
 
 export default endpoints;
