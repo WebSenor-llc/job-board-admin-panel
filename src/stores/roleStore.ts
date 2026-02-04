@@ -52,21 +52,14 @@ const defaultRoles: Role[] = [
     id: 'super_admin',
     name: 'Super Admin',
     description: 'Full access to all features',
-    permissions: defaultPermissions.map(p => p.id),
+    permissions: defaultPermissions.map((p) => p.id),
     isCustom: false,
   },
   {
-    id: 'moderator',
-    name: 'Moderator',
+    id: 'admin',
+    name: 'Admin',
     description: 'Can manage users and posts',
     permissions: ['view_analytics', 'manage_users', 'manage_posts'],
-    isCustom: false,
-  },
-  {
-    id: 'viewer',
-    name: 'Viewer',
-    description: 'Read-only access to analytics',
-    permissions: ['view_analytics'],
     isCustom: false,
   },
 ];
@@ -106,9 +99,7 @@ export const useRoleStore = create<RoleState>()(
       },
       updateRole: (id, updates) => {
         set((state) => ({
-          roles: state.roles.map((role) =>
-            role.id === id ? { ...role, ...updates } : role
-          ),
+          roles: state.roles.map((role) => (role.id === id ? { ...role, ...updates } : role)),
         }));
       },
       deleteRole: (id) => {
@@ -117,7 +108,7 @@ export const useRoleStore = create<RoleState>()(
         }));
       },
       inviteMember: (email, roleId) => {
-        const role = get().roles.find(r => r.id === roleId);
+        const role = get().roles.find((r) => r.id === roleId);
         const newMember: Member = {
           id: Date.now().toString(),
           name: email.split('@')[0],
@@ -131,7 +122,7 @@ export const useRoleStore = create<RoleState>()(
       updateMember: (id, updates) => {
         set((state) => ({
           members: state.members.map((member) =>
-            member.id === id ? { ...member, ...updates } : member
+            member.id === id ? { ...member, ...updates } : member,
           ),
         }));
       },
@@ -146,8 +137,8 @@ export const useRoleStore = create<RoleState>()(
       partialize: (state) => ({
         roles: state.roles,
         members: state.members,
-        permissions: state.permissions
+        permissions: state.permissions,
       }),
-    }
-  )
+    },
+  ),
 );

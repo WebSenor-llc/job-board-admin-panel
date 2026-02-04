@@ -10,6 +10,20 @@ export interface IUser {
   updatedAt?: string;
 }
 
+// Admin Types
+export interface IAdmin {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  roleId?: string;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Role and Permission Types
 export interface IPermission {
   id: string;

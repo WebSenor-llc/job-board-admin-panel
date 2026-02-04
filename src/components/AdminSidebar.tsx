@@ -32,7 +32,7 @@ import config from '@/lib/config';
 
 const mainItems = [
   { title: 'Dashboard', url: routePath.DASHBOARD, icon: BarChart3 },
-  { title: 'Users', url: routePath.USER.LIST, icon: Users },
+  { title: 'Admins', url: routePath.USER.LIST, icon: Users },
 ];
 
 const adminItems = [
