@@ -103,7 +103,7 @@ export interface ICompany {
   panNumber?: string;
   gstNumber?: string;
   cinNumber?: string;
-  kycDocuments?: string;
+  kycDocuments?: boolean;
   isVerified: boolean;
   verificationStatus?: VerificationStatus;
   verificationDocuments?: string;

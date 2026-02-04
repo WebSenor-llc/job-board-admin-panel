@@ -79,6 +79,7 @@ const endpoints = {
     delete: (id: string) => `/companies/${id}`,
     uploadLogo: (id: string) => `/companies/${id}/logo`,
     uploadBanner: (id: string) => `/companies/${id}/banner`,
+    uploadVerificationDocument: (id: string) => `/companies/${id}/verification-document`,
   },
 };
 

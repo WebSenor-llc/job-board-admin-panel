@@ -1,6 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Building2, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Building2,
+  CheckCircle,
+  XCircle,
+  Upload,
+  X,
+} from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useThrottle } from '@/hooks/useThrottle';
 import { toast } from 'sonner';
@@ -45,6 +56,7 @@ import {
 } from '@/components/ui/table';
 import http from '@/api/http';
 import endpoints from '@/api/endpoints';
+import routePath from '@/routes/routePath';
 import type { ICompany, CompanySize, CompanyType } from '@/types/index';
 
 interface CompanyFormData {
@@ -129,6 +141,8 @@ const cleanFormData = (data: CompanyFormData) => {
 
 export default function CompaniesListPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteCompanyId, setDeleteCompanyId] = useState<string | null>(null);
@@ -138,6 +152,12 @@ export default function CompaniesListPage() {
   const [limit] = useState(10);
   const [formData, setFormData] = useState<CompanyFormData>(initialFormData);
   const [editingCompany, setEditingCompany] = useState<ICompany | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [verificationDocFile, setVerificationDocFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [verificationDocPreview, setVerificationDocPreview] = useState<string | null>(null);
 
   // Fetch companies list with pagination (uses debounced search to reduce API calls)
   const { data: companiesData, isLoading } = useQuery({
@@ -160,6 +180,64 @@ export default function CompaniesListPage() {
   const currentPage = pagination?.currentPage || page;
   const hasNextPage = pagination?.hasNextPage || false;
 
+  // Handle edit query parameter from details page
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && companies.length > 0) {
+      const companyToEdit = companies.find((c) => c.id === editId);
+      if (companyToEdit) {
+        handleEdit(companyToEdit);
+        // Clear the query parameter
+        searchParams.delete('edit');
+        setSearchParams(searchParams);
+      } else {
+        // If company not found in current page, fetch it directly
+        http
+          .get(endpoints.company.details(editId))
+          .then((response) => {
+            const company = response.data || response;
+            handleEdit(company);
+            searchParams.delete('edit');
+            setSearchParams(searchParams);
+          })
+          .catch(() => {
+            toast.error('Company not found');
+            searchParams.delete('edit');
+            setSearchParams(searchParams);
+          });
+      }
+    }
+  }, [searchParams, companies]);
+
+  // Helper function to upload logo/banner
+  const uploadCompanyImage = async (companyId: string, file: File, type: 'logo' | 'banner') => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const endpoint =
+      type === 'logo'
+        ? endpoints.company.uploadLogo(companyId)
+        : endpoints.company.uploadBanner(companyId);
+
+    return await http.post(endpoint, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  };
+
+  // Helper function to upload verification document
+  const uploadVerificationDocument = async (companyId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return await http.post(endpoints.company.uploadVerificationDocument(companyId), formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  };
+
   // Create company mutation
   const getErrorMessage = (error: unknown) => {
     if (!error) return undefined;
@@ -174,13 +252,33 @@ export default function CompaniesListPage() {
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
       const cleanedData = cleanFormData(data);
-      return await http.post(endpoints.company.create, cleanedData);
+      const response = await http.post(endpoints.company.create, cleanedData);
+
+      // Upload logo and banner if files are selected
+      if (logoFile && response.id) {
+        await uploadCompanyImage(response.id, logoFile, 'logo');
+      }
+      if (bannerFile && response.id) {
+        await uploadCompanyImage(response.id, bannerFile, 'banner');
+      }
+      // Upload verification document if file is selected
+      if (verificationDocFile && response.id) {
+        await uploadVerificationDocument(response.id, verificationDocFile);
+      }
+
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast.success('Company created successfully');
       setIsCreateOpen(false);
       setFormData(initialFormData);
+      setLogoFile(null);
+      setBannerFile(null);
+      setVerificationDocFile(null);
+      setLogoPreview(null);
+      setBannerPreview(null);
+      setVerificationDocPreview(null);
     },
     onError: (error: unknown) => {
       toast.error(getErrorMessage(error) || 'Failed to create company');
@@ -191,7 +289,21 @@ export default function CompaniesListPage() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: CompanyFormData }) => {
       const cleanedData = cleanFormData(data);
-      return await http.put(endpoints.company.update(id), cleanedData);
+      const response = await http.put(endpoints.company.update(id), cleanedData);
+
+      // Upload logo and banner if new files are selected
+      if (logoFile) {
+        await uploadCompanyImage(id, logoFile, 'logo');
+      }
+      if (bannerFile) {
+        await uploadCompanyImage(id, bannerFile, 'banner');
+      }
+      // Upload verification document if new file is selected
+      if (verificationDocFile) {
+        await uploadVerificationDocument(id, verificationDocFile);
+      }
+
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
@@ -199,6 +311,12 @@ export default function CompaniesListPage() {
       setIsEditOpen(false);
       setEditingCompany(null);
       setFormData(initialFormData);
+      setLogoFile(null);
+      setBannerFile(null);
+      setVerificationDocFile(null);
+      setLogoPreview(null);
+      setBannerPreview(null);
+      setVerificationDocPreview(null);
     },
     onError: (error: unknown) => {
       toast.error(getErrorMessage(error) || 'Failed to update company');
@@ -254,7 +372,119 @@ export default function CompaniesListPage() {
       gstNumber: company.gstNumber || '',
       cinNumber: company.cinNumber || '',
     });
+    // Set preview to existing URLs
+    setLogoPreview(company.logoUrl || null);
+    setBannerPreview(company.bannerUrl || null);
+    setVerificationDocPreview(company.verificationDocuments || null);
+    setLogoFile(null);
+    setBannerFile(null);
+    setVerificationDocFile(null);
     setIsEditOpen(true);
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+      return;
+    }
+
+    // Validate file size (2MB for logo)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File too large. Maximum size is 2MB');
+      return;
+    }
+
+    setLogoFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+      return;
+    }
+
+    // Validate file size (5MB for banner)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File too large. Maximum size is 5MB');
+      return;
+    }
+
+    setBannerFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBannerPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+  };
+
+  const clearBanner = () => {
+    setBannerFile(null);
+    setBannerPreview(null);
+  };
+
+  const handleVerificationDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/pdf',
+      'application/msword', // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only JPG, PNG, PDF, DOC, DOCX are allowed');
+      return;
+    }
+
+    // Validate file size (10MB for verification documents)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File too large. Maximum size is 10MB');
+      return;
+    }
+
+    setVerificationDocFile(file);
+
+    // Create preview for images, show filename for documents
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVerificationDocPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setVerificationDocPreview(file.name);
+    }
+  };
+
+  const clearVerificationDoc = () => {
+    setVerificationDocFile(null);
+    setVerificationDocPreview(null);
   };
 
   // Throttled update handler - prevents double-click submissions (2 second delay)
@@ -275,12 +505,24 @@ export default function CompaniesListPage() {
   const handleCloseCreateDialog = () => {
     setIsCreateOpen(false);
     setFormData(initialFormData);
+    setLogoFile(null);
+    setBannerFile(null);
+    setVerificationDocFile(null);
+    setLogoPreview(null);
+    setBannerPreview(null);
+    setVerificationDocPreview(null);
   };
 
   const handleCloseEditDialog = () => {
     setIsEditOpen(false);
     setEditingCompany(null);
     setFormData(initialFormData);
+    setLogoFile(null);
+    setBannerFile(null);
+    setVerificationDocFile(null);
+    setLogoPreview(null);
+    setBannerPreview(null);
+    setVerificationDocPreview(null);
   };
 
   const getStatusBadge = (isActive: boolean) => {
@@ -466,30 +708,90 @@ export default function CompaniesListPage() {
                 </div>
               </div>
 
-              {/* Media URLs */}
+              {/* Media Upload */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-sm">Company Media</h3>
-                <div>
-                  <Label htmlFor="logoUrl">Logo URL</Label>
-                  <Input
-                    id="logoUrl"
-                    type="url"
-                    value={formData.logoUrl}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, logoUrl: e.target.value }))}
-                    placeholder="https://example.com/logo.png"
-                  />
+
+                {/* Logo Upload */}
+                <div className="space-y-2">
+                  <Label>Company Logo (JPEG, PNG, WebP - Max 2MB)</Label>
+                  <div className="flex items-start gap-4">
+                    {logoPreview ? (
+                      <div className="relative">
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="h-24 w-24 object-cover rounded border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={clearLogo}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="h-24 w-24 border-2 border-dashed rounded flex items-center justify-center bg-muted">
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="logo-upload"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleLogoChange}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload company logo (square recommended)
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="bannerUrl">Banner URL</Label>
-                  <Input
-                    id="bannerUrl"
-                    type="url"
-                    value={formData.bannerUrl}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, bannerUrl: e.target.value }))
-                    }
-                    placeholder="https://example.com/banner.jpg"
-                  />
+
+                {/* Banner Upload */}
+                <div className="space-y-2">
+                  <Label>Company Banner (JPEG, PNG, WebP - Max 5MB)</Label>
+                  <div className="flex items-start gap-4">
+                    {bannerPreview ? (
+                      <div className="relative">
+                        <img
+                          src={bannerPreview}
+                          alt="Banner preview"
+                          className="h-24 w-48 object-cover rounded border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={clearBanner}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="h-24 w-48 border-2 border-dashed rounded flex items-center justify-center bg-muted">
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="banner-upload"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleBannerChange}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload company banner (wide format recommended)
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -621,6 +923,58 @@ export default function CompaniesListPage() {
                     />
                   </div>
                 </div>
+
+                {/* Business Verification Document Upload */}
+                <div className="space-y-2">
+                  <Label>Business Verification (KYC/PAN/GST Upload)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Upload business verification document (JPG, PNG, PDF, DOC, DOCX - Max 10MB)
+                  </p>
+                  <div className="flex items-start gap-4">
+                    {verificationDocPreview ? (
+                      <div className="relative">
+                        {verificationDocFile && verificationDocFile.type.startsWith('image/') ? (
+                          <img
+                            src={verificationDocPreview}
+                            alt="Verification document preview"
+                            className="h-24 w-24 object-cover rounded border"
+                          />
+                        ) : (
+                          <div className="h-24 w-48 border-2 rounded flex items-center justify-center bg-muted p-2">
+                            <p className="text-xs text-center break-all">
+                              {verificationDocPreview}
+                            </p>
+                          </div>
+                        )}
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={clearVerificationDoc}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="h-24 w-48 border-2 border-dashed rounded flex items-center justify-center bg-muted">
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="verification-doc-upload"
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={handleVerificationDocChange}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload KYC/PAN/GST verification document
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
@@ -714,7 +1068,11 @@ export default function CompaniesListPage() {
                 </TableHeader>
                 <TableBody>
                   {companies.map((company: ICompany) => (
-                    <TableRow key={company.id}>
+                    <TableRow
+                      key={company.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(routePath.COMPANY.DETAILS.replace(':id', company.id))}
+                    >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -732,12 +1090,15 @@ export default function CompaniesListPage() {
                       <TableCell>{company.companySize || 'N/A'}</TableCell>
                       <TableCell>{getStatusBadge(company.isVerified)}</TableCell>
                       <TableCell>{formatDate(company.createdAt)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEdit(company)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(company);
+                            }}
                             title="Edit company"
                           >
                             <Edit className="h-4 w-4" />
@@ -745,7 +1106,10 @@ export default function CompaniesListPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setDeleteCompanyId(company.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteCompanyId(company.id);
+                            }}
                             title="Delete company"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -929,28 +1293,80 @@ export default function CompaniesListPage() {
               </div>
             </div>
 
-            {/* Media URLs */}
+            {/* Media Upload */}
             <div className="space-y-4">
               <h3 className="font-semibold text-sm">Company Media</h3>
-              <div>
-                <Label htmlFor="edit-logoUrl">Logo URL</Label>
-                <Input
-                  id="edit-logoUrl"
-                  type="url"
-                  value={formData.logoUrl}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, logoUrl: e.target.value }))}
-                  placeholder="https://example.com/logo.png"
+              <div className="space-y-2">
+                <Label>Logo</Label>
+                {(logoPreview || formData.logoUrl) && (
+                  <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                    <img
+                      src={logoPreview || formData.logoUrl}
+                      alt="Logo preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('edit-logo-input')?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Logo
+                  </Button>
+                  {(logoFile || formData.logoUrl) && (
+                    <Button type="button" variant="ghost" size="sm" onClick={clearLogo}>
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <input
+                  id="edit-logo-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleLogoChange}
                 />
+                <p className="text-xs text-muted-foreground">JPEG, PNG, or WebP. Max 2MB.</p>
               </div>
-              <div>
-                <Label htmlFor="edit-bannerUrl">Banner URL</Label>
-                <Input
-                  id="edit-bannerUrl"
-                  type="url"
-                  value={formData.bannerUrl}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, bannerUrl: e.target.value }))}
-                  placeholder="https://example.com/banner.jpg"
+              <div className="space-y-2">
+                <Label>Banner</Label>
+                {(bannerPreview || formData.bannerUrl) && (
+                  <div className="relative w-full h-32 border rounded-lg overflow-hidden">
+                    <img
+                      src={bannerPreview || formData.bannerUrl}
+                      alt="Banner preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('edit-banner-input')?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Banner
+                  </Button>
+                  {(bannerFile || formData.bannerUrl) && (
+                    <Button type="button" variant="ghost" size="sm" onClick={clearBanner}>
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <input
+                  id="edit-banner-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleBannerChange}
                 />
+                <p className="text-xs text-muted-foreground">JPEG, PNG, or WebP. Max 5MB.</p>
               </div>
             </div>
 
@@ -1081,6 +1497,55 @@ export default function CompaniesListPage() {
                     maxLength={25}
                   />
                 </div>
+              </div>
+
+              {/* Business Verification Document Upload */}
+              <div className="space-y-2">
+                <Label>Business Verification (KYC/PAN/GST Upload)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Upload business verification document (JPG, PNG, PDF, DOC, DOCX - Max 10MB)
+                </p>
+                {verificationDocPreview && (
+                  <div className="relative w-full max-w-md">
+                    {verificationDocFile && verificationDocFile.type.startsWith('image/') ? (
+                      <img
+                        src={verificationDocPreview}
+                        alt="Verification document preview"
+                        className="h-32 w-full object-contain border rounded-lg"
+                      />
+                    ) : (
+                      <div className="h-24 w-full border-2 rounded flex items-center justify-center bg-muted p-2">
+                        <p className="text-xs text-center break-all">{verificationDocPreview}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('edit-verification-doc-input')?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Document
+                  </Button>
+                  {(verificationDocFile || editingCompany?.verificationDocuments) && (
+                    <Button type="button" variant="ghost" size="sm" onClick={clearVerificationDoc}>
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <input
+                  id="edit-verification-doc-input"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  onChange={handleVerificationDocChange}
+                />
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG, PDF, DOC, or DOCX. Max 10MB.
+                </p>
               </div>
             </div>
 
