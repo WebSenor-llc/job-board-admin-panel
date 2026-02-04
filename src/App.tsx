@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/lib/LoadingSpinner';
 import { useAuthStore } from '@/stores/authStore';
 import allRoutes from '@/routes/routes';
 import routePath from '@/routes/routePath';
+import '@/lib/debug'; // Debug utilities
 
 const queryClient = new QueryClient();
 

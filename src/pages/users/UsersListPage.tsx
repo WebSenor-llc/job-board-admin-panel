@@ -25,13 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -51,30 +44,29 @@ interface AdminFormData {
   firstName: string;
   lastName: string;
   email: string;
-  roleId?: string;
   password?: string;
   confirmPassword?: string;
 }
 
 interface AdminApiResponse {
-  data: IAdmin[];
-  pagination: {
-    totalUsers: number;
-    pageCount: number;
-    hasNextPage: boolean;
+  data: {
+    items: IAdmin[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
   };
-}
-
-interface RoleOption {
-  id: string;
-  name: string;
+  message: string;
+  status: string;
+  statusCode: number;
 }
 
 const initialFormData: AdminFormData = {
   firstName: '',
   lastName: '',
   email: '',
-  roleId: '',
   password: '',
   confirmPassword: '',
 };
@@ -91,17 +83,6 @@ export default function UsersListPage() {
   const [formData, setFormData] = useState<AdminFormData>(initialFormData);
   const [editingAdmin, setEditingAdmin] = useState<IAdmin | null>(null);
 
-  // Fetch role options for dropdown
-  const { data: rolesData } = useQuery({
-    queryKey: ['roleOptions'],
-    queryFn: async () => {
-      const response = await http.get(endpoints.role.getOptions);
-      return response as unknown as RoleOption[];
-    },
-  });
-
-  const roles: RoleOption[] = rolesData || [];
-
   // Fetch admins list with pagination (uses debounced search to reduce API calls)
   const { data: adminsData, isLoading } = useQuery({
     queryKey: ['admins', page, limit, debouncedSearchQuery],
@@ -109,6 +90,7 @@ export default function UsersListPage() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        role: 'admin',
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
       });
       const response = await http.get(`${endpoints.user.list}?${params}`);
@@ -116,11 +98,11 @@ export default function UsersListPage() {
     },
   });
 
-  const admins: IAdmin[] = adminsData?.data || [];
-  const pagination = adminsData?.pagination;
-  const total = pagination?.totalUsers || 0;
-  const totalPages = pagination?.pageCount || 1;
-  const hasNextPage = pagination?.hasNextPage || false;
+  const admins: IAdmin[] = adminsData?.data?.items || [];
+  const pagination = adminsData?.data?.pagination;
+  const total = pagination?.total || 0;
+  const totalPages = pagination?.totalPages || 1;
+  const hasNextPage = page < totalPages;
 
   // Create admin mutation
   const getErrorMessage = (error: unknown) => {
@@ -194,6 +176,7 @@ export default function UsersListPage() {
       toast.error('Passwords do not match');
       return;
     }
+    // Role is auto-assigned by backend
     createMutation.mutate(formData);
   }, 2000);
 
@@ -203,7 +186,6 @@ export default function UsersListPage() {
       firstName: admin.firstName,
       lastName: admin.lastName,
       email: admin.email,
-      roleId: admin.roleId || '',
     });
     setIsEditOpen(true);
   };
@@ -279,7 +261,10 @@ export default function UsersListPage() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Admin</DialogTitle>
-              <DialogDescription>Add a new admin account to the platform</DialogDescription>
+              <DialogDescription>
+                Add a new admin account to the platform. The ADMIN role will be automatically
+                assigned.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -308,37 +293,17 @@ export default function UsersListPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">
-                    Email <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                    placeholder="john@admin.com"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Select
-                    value={formData.roleId}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, roleId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="email">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder="john@admin.com"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -350,8 +315,11 @@ export default function UsersListPage() {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    placeholder="Min 8 characters"
+                    placeholder="e.g., Admin@123"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Min 8 chars with uppercase, lowercase, number & special character
+                  </p>
                 </div>
                 <div>
                   <Label htmlFor="confirmPassword">
@@ -582,37 +550,17 @@ export default function UsersListPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-email">
-                  Email <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder="john@admin.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-role">Role</Label>
-                <Select
-                  value={formData.roleId}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, roleId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="edit-email">
+                Email <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="john@admin.com"
+              />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleCloseEditDialog}>

@@ -52,11 +52,15 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ICompany, VerificationStatus, ApiResponse } from '@/types/index.d';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function CompanyDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // RBAC: Check permissions
+  const { hasPermission } = usePermissions();
 
   // Subscription checkboxes state (dummy for future)
   const [subscriptions, setSubscriptions] = useState({
@@ -206,35 +210,42 @@ export default function CompanyDetailsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleEditClick}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Company</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{company.name}"? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  className="bg-destructive text-destructive-foreground"
-                >
+          {/* Show Edit button only if user has UPDATE_COMPANY permission */}
+          {hasPermission('UPDATE_COMPANY') && (
+            <Button variant="outline" onClick={handleEditClick}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          )}
+
+          {/* Show Delete button only if user has DELETE_COMPANY permission */}
+          {hasPermission('DELETE_COMPANY') && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Company</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{company.name}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
 
@@ -497,60 +508,64 @@ export default function CompanyDetailsPage() {
           </Card>
         )}
 
-        {/* Verification Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Verification Settings</CardTitle>
-            <CardDescription>Manage company verification status and activity</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="verification-status">Verification Status</Label>
-              <Select
-                value={verificationStatus}
-                onValueChange={handleVerificationStatusChange}
-                disabled={updateVerificationMutation.isPending}
-              >
-                <SelectTrigger id="verification-status">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="verified">Verified</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Workflow status for verification process
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="is-active">Company Status</Label>
-              <Select
-                value={isActive ? 'active' : 'inactive'}
-                onValueChange={handleIsActiveChange}
-                disabled={updateVerificationMutation.isPending}
-              >
-                <SelectTrigger id="is-active">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Enable or disable company visibility</p>
-            </div>
-
-            {company.kycDocuments && (
-              <div className="flex items-center gap-2 pt-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">KYC Documents Uploaded</span>
+        {/* Verification Settings - Only show if user has UPDATE_COMPANY permission */}
+        {hasPermission('UPDATE_COMPANY') && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Verification Settings</CardTitle>
+              <CardDescription>Manage company verification status and activity</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="verification-status">Verification Status</Label>
+                <Select
+                  value={verificationStatus}
+                  onValueChange={handleVerificationStatusChange}
+                  disabled={updateVerificationMutation.isPending}
+                >
+                  <SelectTrigger id="verification-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="verified">Verified</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Workflow status for verification process
+                </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              <div className="space-y-2">
+                <Label htmlFor="is-active">Company Status</Label>
+                <Select
+                  value={isActive ? 'active' : 'inactive'}
+                  onValueChange={handleIsActiveChange}
+                  disabled={updateVerificationMutation.isPending}
+                >
+                  <SelectTrigger id="is-active">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Enable or disable company visibility
+                </p>
+              </div>
+
+              {company.kycDocuments && (
+                <div className="flex items-center gap-2 pt-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">KYC Documents Uploaded</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Verification Document Preview */}
         {company.verificationDocuments && (

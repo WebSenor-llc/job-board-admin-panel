@@ -15,18 +15,21 @@ export interface User {
   isMobileVerified: boolean;
   onboardingStep: number;
   isOnboardingCompleted: boolean;
+  permissions?: string[]; // RBAC permissions
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   token: string | null;
+  permissions: string[];
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
   setToken: (token: string) => void;
+  setPermissions: (permissions: string[]) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -35,28 +38,31 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       token: null,
+      permissions: [],
       _hasHydrated: false,
       setHasHydrated: (state: boolean) => {
         set({ _hasHydrated: state });
       },
       login: async (email: string, password: string) => {
-        // API returns: { data: { accessToken, user, expiresIn }, message, status, statusCode }
+        // API returns: { data: { accessToken, user, expiresIn, permissions }, message, status, statusCode }
         const response = await http.post<{
-          data: { accessToken: string; user: User; expiresIn?: number };
+          data: { accessToken: string; user: User; expiresIn?: number; permissions?: string[] };
         }>(endpoints.auth.login, { email, password });
 
-        const { accessToken, user } = response.data;
+        const { accessToken, user, permissions = [] } = response.data;
 
         if (!accessToken) {
           throw new Error('No token received from server');
         }
 
         localStorage.setItem('token', accessToken);
-        set({ user, isAuthenticated: true, token: accessToken });
+        localStorage.setItem('permissions', JSON.stringify(permissions));
+        set({ user, isAuthenticated: true, token: accessToken, permissions });
       },
       logout: () => {
         localStorage.removeItem('token');
-        set({ user: null, isAuthenticated: false, token: null });
+        localStorage.removeItem('permissions');
+        set({ user: null, isAuthenticated: false, token: null, permissions: [] });
       },
       setUser: (user: User) => {
         set({ user, isAuthenticated: true });
@@ -65,6 +71,10 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem('token', token);
         set({ token });
       },
+      setPermissions: (permissions: string[]) => {
+        localStorage.setItem('permissions', JSON.stringify(permissions));
+        set({ permissions });
+      },
     }),
     {
       name: 'auth-storage',
@@ -72,6 +82,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         token: state.token,
+        permissions: state.permissions,
       }),
       onRehydrateStorage: () => (state) => {
         // Called after rehydration completes
