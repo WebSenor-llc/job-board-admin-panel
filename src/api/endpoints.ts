@@ -5,6 +5,12 @@ const endpoints = {
     verifyOtp: '/auth/admin/verify-otp',
     logout: '/auth/admin/logout',
   },
+  category: {
+    list: '/categories',
+    parents: '/categories/parents',
+    subcategories: (parentId: string) => `/categories/${parentId}/subcategories`,
+    details: (id: string) => `/categories/${id}`,
+  },
   role: {
     create: '/admin/role',
     list: '/admin/role/list',
