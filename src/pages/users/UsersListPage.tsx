@@ -25,6 +25,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -44,6 +51,7 @@ interface AdminFormData {
   firstName: string;
   lastName: string;
   email: string;
+  companyId?: string;
   password?: string;
   confirmPassword?: string;
 }
@@ -63,10 +71,17 @@ interface AdminApiResponse {
   statusCode: number;
 }
 
+interface Company {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 const initialFormData: AdminFormData = {
   firstName: '',
   lastName: '',
   email: '',
+  companyId: '',
   password: '',
   confirmPassword: '',
 };
@@ -104,6 +119,17 @@ export default function UsersListPage() {
   const totalPages = pagination?.totalPages || 1;
   const hasNextPage = page < totalPages;
 
+  // Fetch companies for dropdown
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const response = await http.get(endpoints.company.list);
+      return response as unknown as { data: Company[] };
+    },
+  });
+
+  const companies: Company[] = companiesData?.data || [];
+
   // Create admin mutation
   const getErrorMessage = (error: unknown) => {
     if (!error) return undefined;
@@ -117,11 +143,12 @@ export default function UsersListPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: AdminFormData) => {
-      return await http.post(endpoints.user.create, data);
+      // Use the new admin creation endpoint with company assignment
+      return await http.post('/admin/users/admins', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admins'] });
-      toast.success('Admin created successfully');
+      toast.success('Admin created successfully and assigned to company');
       setIsCreateOpen(false);
       setFormData(initialFormData);
     },
@@ -168,6 +195,10 @@ export default function UsersListPage() {
       toast.error('Please fill in all required fields');
       return;
     }
+    if (!formData.companyId) {
+      toast.error('Please select a company');
+      return;
+    }
     if (!formData.password || formData.password.length < 8) {
       toast.error('Password must be at least 8 characters');
       return;
@@ -176,7 +207,7 @@ export default function UsersListPage() {
       toast.error('Passwords do not match');
       return;
     }
-    // Role is auto-assigned by backend
+    // Role and company assignment handled by backend
     createMutation.mutate(formData);
   }, 2000);
 
@@ -304,6 +335,35 @@ export default function UsersListPage() {
                   onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                   placeholder="john@admin.com"
                 />
+              </div>
+              <div>
+                <Label htmlFor="company">
+                  Company <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.companyId}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, companyId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company to assign admin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.length === 0 ? (
+                      <SelectItem value="no-companies" disabled>
+                        No companies available
+                      </SelectItem>
+                    ) : (
+                      companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Admin will be scoped to this company
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

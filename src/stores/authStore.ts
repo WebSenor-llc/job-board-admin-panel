@@ -11,6 +11,8 @@ export interface User {
   firstName: string;
   lastName: string;
   mobile?: string;
+  companyId?: string | null; // Company assignment for admin/employer users
+  companyName?: string; // Company name for display
   isVerified: boolean;
   isMobileVerified: boolean;
   onboardingStep: number;

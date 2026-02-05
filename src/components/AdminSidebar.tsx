@@ -26,29 +26,55 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, User } from '@/stores/authStore';
 import routePath from '@/routes/routePath';
 import config from '@/lib/config';
+import { getRoleDisplayName, getCompanyScopeInfo } from '@/lib/roleHelpers';
+import {
+  canManageCompanies,
+  canManageAdmins,
+  canModerateContent,
+  canViewAnalytics,
+} from '@/lib/permissions';
 
-const mainItems = [
-  { title: 'Dashboard', url: routePath.DASHBOARD, icon: BarChart3 },
-  { title: 'Admins', url: routePath.USER.LIST, icon: Users },
-];
+// Menu items will be filtered based on user permissions
+const getAllMainItems = (user: User | null) =>
+  [
+    { title: 'Dashboard', url: routePath.DASHBOARD, icon: BarChart3, show: canViewAnalytics(user) },
+    { title: 'Admins', url: routePath.USER.LIST, icon: Users, show: canManageAdmins(user) },
+  ].filter((item) => item.show);
 
-const adminItems = [
-  { title: 'Role Management', url: routePath.ROLE.LIST, icon: Shield },
-  {
-    title: 'Members',
-    url: routePath.MEMBER.LIST,
-    icon: UserPlus,
-    subItems: [
-      { title: 'Candidates', url: routePath.MEMBER.CANDIDATES, icon: UserCircle },
-      { title: 'Employers', url: routePath.MEMBER.EMPLOYERS, icon: Building2 },
-    ],
-  },
-  { title: 'Companies', url: routePath.COMPANY.LIST, icon: Building2 },
-  { title: 'Post Moderation', url: routePath.MODERATION.LIST, icon: Flag },
-];
+const getAllAdminItems = (user: User | null) =>
+  [
+    {
+      title: 'Role Management',
+      url: routePath.ROLE.LIST,
+      icon: Shield,
+      show: user?.role === 'super_admin',
+    },
+    {
+      title: 'Members',
+      url: routePath.MEMBER.LIST,
+      icon: UserPlus,
+      show: user?.role === 'admin' || user?.role === 'super_admin',
+      subItems: [
+        { title: 'Candidates', url: routePath.MEMBER.CANDIDATES, icon: UserCircle },
+        { title: 'Employers', url: routePath.MEMBER.EMPLOYERS, icon: Building2 },
+      ],
+    },
+    {
+      title: 'Companies',
+      url: routePath.COMPANY.LIST,
+      icon: Building2,
+      show: canManageCompanies(user),
+    },
+    {
+      title: 'Post Moderation',
+      url: routePath.MODERATION.LIST,
+      icon: Flag,
+      show: canModerateContent(user),
+    },
+  ].filter((item) => item.show);
 
 // const settingsItems = [
 //   { title: "Settings", url: "/settings", icon: Settings },
@@ -61,6 +87,10 @@ export function AdminSidebar() {
   const isCollapsed = state === 'collapsed';
   const { logout, user } = useAuthStore();
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Members']);
+
+  // Get filtered menu items based on user role and permissions
+  const mainItems = getAllMainItems(user);
+  const adminItems = getAllAdminItems(user);
 
   const isActive = (path: string) => {
     if (path === routePath.DASHBOARD) return currentPath === routePath.DASHBOARD;
@@ -232,18 +262,32 @@ export function AdminSidebar() {
 
         <div className="mt-auto pt-4 border-t border-sidebar-border space-y-2">
           {!isCollapsed && (
-            <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-sidebar-accent/50">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-foreground text-sm font-bold">
-                  {user?.name?.charAt(0) || 'A'}
-                </span>
+            <div className="px-3 py-2 rounded-lg bg-sidebar-accent/50 space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary-foreground text-sm font-bold">
+                    {user?.name?.charAt(0) || user?.email?.charAt(0) || 'A'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    {user?.email || 'Admin User'}
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/70 truncate">
+                    {user?.role ? getRoleDisplayName(user.role) : 'Administrator'}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {user?.email || 'Admin User'}
-                </p>
-                <p className="text-xs text-sidebar-foreground/70 truncate">Administrator</p>
-              </div>
+              {user && (
+                <div className="pl-11">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Building2 className="h-3 w-3 text-sidebar-foreground/60" />
+                    <span className="text-sidebar-foreground/60 truncate">
+                      {getCompanyScopeInfo(user)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <Button
