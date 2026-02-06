@@ -38,6 +38,11 @@ const routePath = {
     EDIT: '/companies/edit/:id',
     DETAILS: '/companies/details/:id',
   },
+  RESUME_TEMPLATES: {
+    LIST: '/resume-templates/list',
+    CREATE: '/resume-templates/create',
+    EDIT: '/resume-templates/edit/:id',
+  },
 };
 
 export default routePath;

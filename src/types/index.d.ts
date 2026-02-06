@@ -221,3 +221,20 @@ export interface FormField {
   options?: { label: string; value: string }[];
   validation?: unknown;
 }
+
+// Resume Template Types
+export type TemplateLevel = 'fresher' | 'mid' | 'experienced';
+
+export interface IResumeTemplate {
+  id: string;
+  name: string;
+  templateType?: string;
+  templateLevel?: TemplateLevel;
+  thumbnailUrl?: string;
+  templateHtml: string;
+  templateCss?: string;
+  isPremium: boolean;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+}

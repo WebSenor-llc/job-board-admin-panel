@@ -58,6 +58,10 @@ export const canViewAnalytics = (user: User | null): boolean => {
   return hasPermission(user, 'analytics:read');
 };
 
+export const canManageResumeTemplates = (user: User | null): boolean => {
+  return user?.role === 'super_admin' && hasPermission(user, 'resume-templates:write');
+};
+
 /**
  * Get allowed actions based on role
  * - Super Admin: Create Companies and Admins

@@ -89,6 +89,16 @@ const endpoints = {
     uploadBanner: (id: string) => `/companies/${id}/banner`,
     uploadVerificationDocument: (id: string) => `/companies/${id}/verification-document`,
   },
+  resumeTemplates: {
+    create: '/resume-templates',
+    list: '/resume-templates',
+    details: (id: string) => `/resume-templates/${id}`,
+    update: (id: string) => `/resume-templates/${id}`,
+    delete: (id: string) => `/resume-templates/${id}`,
+    uploadThumbnail: (id: string) => `/resume-templates/${id}/thumbnail`,
+    updateStatus: (id: string) => `/resume-templates/${id}/status`,
+    updateOrder: (id: string) => `/resume-templates/${id}/order`,
+  },
 };
 
 export default endpoints;

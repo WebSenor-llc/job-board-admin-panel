@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Building2,
   UserCircle,
+  FileText,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -73,6 +74,12 @@ const getAllAdminItems = (user: User | null) =>
       url: routePath.MODERATION.LIST,
       icon: Flag,
       show: canModerateContent(user),
+    },
+    {
+      title: 'Resume Templates',
+      url: routePath.RESUME_TEMPLATES.LIST,
+      icon: FileText,
+      show: user?.role === 'super_admin',
     },
   ].filter((item) => item.show);
 
