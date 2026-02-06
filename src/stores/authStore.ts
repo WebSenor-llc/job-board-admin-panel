@@ -57,9 +57,12 @@ export const useAuthStore = create<AuthState>()(
           throw new Error('No token received from server');
         }
 
+        // Attach permissions to user object so hasPermission() can access them
+        const userWithPermissions = { ...user, permissions };
+
         localStorage.setItem('token', accessToken);
         localStorage.setItem('permissions', JSON.stringify(permissions));
-        set({ user, isAuthenticated: true, token: accessToken, permissions });
+        set({ user: userWithPermissions, isAuthenticated: true, token: accessToken, permissions });
       },
       logout: () => {
         localStorage.removeItem('token');
@@ -88,6 +91,10 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         // Called after rehydration completes
+        // Attach permissions to user object if both exist
+        if (state && state.user && state.permissions.length > 0) {
+          state.user.permissions = state.permissions;
+        }
         state?.setHasHydrated(true);
       },
     },
