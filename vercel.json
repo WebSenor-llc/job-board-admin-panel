@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "http://ai-job-portal-dev-alb-1152570158.ap-south-1.elb.amazonaws.com/api/:path*"
+      "source": "/api/v1/:path*",
+      "destination": "http://ai-job-portal-dev-alb-1152570158.ap-south-1.elb.amazonaws.com/api/v1/:path*"
     }
   ]
 }
