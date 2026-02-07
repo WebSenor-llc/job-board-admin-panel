@@ -1,7 +1,7 @@
-import config from "@/lib/config";
-import onLogout from "@/lib/onLogout";
-import axios from "axios";
-import { toast } from "sonner";
+import config from '@/lib/config';
+import onLogout from '@/lib/onLogout';
+import axios from 'axios';
+import { toast } from 'sonner';
 
 const http = axios.create({
   baseURL: config.API_BASE_URL,
@@ -10,7 +10,7 @@ const http = axios.create({
 
 http.interceptors.request.use(
   (request) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (token) {
       request.headers.Authorization = `Bearer ${token}`;
     }
@@ -18,7 +18,7 @@ http.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 http.interceptors.response.use(
@@ -27,14 +27,40 @@ http.interceptors.response.use(
   },
   (error) => {
     if (error.response) {
-      if (error.response.status === 401) {
-        onLogout();
+      const status = error.response.status;
+      const message = error?.response?.data?.message || 'An error occurred';
+
+      if (status === 401) {
+        // Show the actual error message before logging out
+        toast.error(message || 'Authentication failed. Please login again.');
+        console.error('401 Unauthorized:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          message: message,
+          data: error.response.data,
+        });
+
+        // Delay logout slightly so user can see the message
+        setTimeout(() => {
+          onLogout();
+        }, 1500);
+      } else if (status === 403) {
+        // Permission denied
+        toast.error(message || "You don't have permission to access this resource");
+        console.error('403 Forbidden:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          message: message,
+          data: error.response.data,
+        });
       } else {
-        toast.error(error?.response?.data?.message || "An error occurred");
+        toast.error(message);
       }
+    } else {
+      toast.error('Network error. Please check your connection.');
     }
     return Promise.reject(error?.response?.data);
-  }
+  },
 );
 
 export default http;

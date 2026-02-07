@@ -1,20 +1,20 @@
-import { useState } from "react";
-import { MoreHorizontal, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { MoreHorizontal, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -22,55 +22,83 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/table';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { isDeletedUser } from '@/lib/deletedUser';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  status: "Active" | "Blocked";
+  status: 'Active' | 'Blocked';
   joinDate: string;
 }
 
 export function UserTable() {
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
   // Mock data - replace with actual data from your store
   const [users, setUsers] = useState<User[]>([
-    { id: "1", name: "John Doe", email: "john@example.com", status: "Active", joinDate: "2024-01-15" },
-    { id: "2", name: "Jane Smith", email: "jane@example.com", status: "Active", joinDate: "2024-02-20" },
-    { id: "3", name: "Bob Johnson", email: "bob@example.com", status: "Blocked", joinDate: "2024-03-10" },
-    { id: "4", name: "Alice Brown", email: "alice@example.com", status: "Active", joinDate: "2024-04-05" },
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      status: 'Active',
+      joinDate: '2024-01-15',
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      status: 'Active',
+      joinDate: '2024-02-20',
+    },
+    {
+      id: '3',
+      name: 'Bob Johnson',
+      email: 'bob@example.com',
+      status: 'Blocked',
+      joinDate: '2024-03-10',
+    },
+    {
+      id: '4',
+      name: 'Alice Brown',
+      email: 'alice@example.com',
+      status: 'Active',
+      joinDate: '2024-04-05',
+    },
   ]);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const toggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, status: user.status === "Active" ? "Blocked" : "Active" }
-        : user
-    ));
+    setUsers(
+      users.map((user) =>
+        user.id === userId
+          ? { ...user, status: user.status === 'Active' ? 'Blocked' : 'Active' }
+          : user,
+      ),
+    );
     toast({
-      title: "User status updated",
-      description: "User status has been successfully changed.",
+      title: 'User status updated',
+      description: 'User status has been successfully changed.',
     });
   };
 
-  const resetPassword = (userId: string) => {
+  const resetPassword = (_userId: string) => {
     toast({
-      title: "Password reset",
-      description: "Password reset email has been sent to the user.",
+      title: 'Password reset',
+      description: 'Password reset email has been sent to the user.',
     });
   };
 
@@ -125,11 +153,17 @@ export function UserTable() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.id}</TableCell>
                     <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge 
-                        variant={user.status === "Active" ? "default" : "destructive"}
-                      >
+                      {isDeletedUser(user.email) ? (
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground italic">Deleted User</span>
+                        </div>
+                      ) : (
+                        user.email
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>
                         {user.status}
                       </Badge>
                     </TableCell>
@@ -145,11 +179,13 @@ export function UserTable() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onClick={() => toggleUserStatus(user.id)}
+                            disabled={isDeletedUser(user.email)}
                           >
-                            {user.status === "Active" ? "Block User" : "Unblock User"}
+                            {user.status === 'Active' ? 'Block User' : 'Unblock User'}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => resetPassword(user.id)}
+                            disabled={isDeletedUser(user.email)}
                           >
                             Reset Password
                           </DropdownMenuItem>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Building2, CheckCircle, XCircle } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useThrottle } from '@/hooks/useThrottle';
 import { toast } from 'sonner';
@@ -25,13 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -44,93 +37,73 @@ import {
 } from '@/components/ui/table';
 import http from '@/api/http';
 import endpoints from '@/api/endpoints';
-import type { IAdmin } from '@/types/index';
+import type { IEmployer } from '@/types/index';
 import { isDeletedUser, getEffectiveActiveStatus } from '@/lib/deletedUser';
 
-interface AdminFormData {
+interface EmployerFormData {
   firstName: string;
   lastName: string;
   email: string;
-  companyId?: string;
+  mobile?: string;
+  designation?: string;
+  department?: string;
   password?: string;
   confirmPassword?: string;
 }
 
-interface AdminApiResponse {
-  data: {
-    items: IAdmin[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
+interface EmployerApiResponse {
+  data: IEmployer[];
+  pagination: {
+    totalEmployers: number;
+    pageCount: number;
+    hasNextPage: boolean;
   };
-  message: string;
-  status: string;
-  statusCode: number;
 }
 
-interface Company {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-const initialFormData: AdminFormData = {
+const initialFormData: EmployerFormData = {
   firstName: '',
   lastName: '',
   email: '',
-  companyId: '',
+  mobile: '',
+  designation: '',
+  department: '',
   password: '',
   confirmPassword: '',
 };
 
-export default function UsersListPage() {
+export default function EmployersListPage() {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
+  const [deleteEmployerId, setDeleteEmployerId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 500); // Debounce search input by 500ms
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [formData, setFormData] = useState<AdminFormData>(initialFormData);
-  const [editingAdmin, setEditingAdmin] = useState<IAdmin | null>(null);
+  const [formData, setFormData] = useState<EmployerFormData>(initialFormData);
+  const [editingEmployer, setEditingEmployer] = useState<IEmployer | null>(null);
 
-  // Fetch admins list with pagination (uses debounced search to reduce API calls)
-  const { data: adminsData, isLoading } = useQuery({
-    queryKey: ['admins', page, limit, debouncedSearchQuery],
+  // Fetch employers list with pagination (uses debounced search to reduce API calls)
+  const { data: employersData, isLoading } = useQuery({
+    queryKey: ['employers', page, limit, debouncedSearchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        role: 'admin',
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
       });
-      const response = await http.get(`${endpoints.user.list}?${params}`);
-      return response as unknown as AdminApiResponse;
+      const response = await http.get(`${endpoints.employer.list}?${params}`);
+      return response as unknown as EmployerApiResponse;
     },
   });
 
-  const admins: IAdmin[] = adminsData?.data?.items || [];
-  const pagination = adminsData?.data?.pagination;
-  const total = pagination?.total || 0;
-  const totalPages = pagination?.totalPages || 1;
-  const hasNextPage = page < totalPages;
+  const employers: IEmployer[] = employersData?.data || [];
+  const pagination = employersData?.pagination;
+  const total = pagination?.totalEmployers || 0;
+  const totalPages = pagination?.pageCount || 1;
+  const hasNextPage = pagination?.hasNextPage || false;
 
-  // Fetch companies for dropdown
-  const { data: companiesData } = useQuery({
-    queryKey: ['companies'],
-    queryFn: async () => {
-      const response = await http.get(endpoints.company.list);
-      return response as unknown as { data: Company[] };
-    },
-  });
-
-  const companies: Company[] = companiesData?.data || [];
-
-  // Create admin mutation
+  // Create employer mutation
   const getErrorMessage = (error: unknown) => {
     if (!error) return undefined;
     if (typeof error === 'string') return error;
@@ -142,50 +115,49 @@ export default function UsersListPage() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async (data: AdminFormData) => {
-      // Use the new admin creation endpoint with company assignment
-      return await http.post('/admin/users/admins', data);
+    mutationFn: async (data: EmployerFormData) => {
+      return await http.post(endpoints.employer.create, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admins'] });
-      toast.success('Admin created successfully and assigned to company');
+      queryClient.invalidateQueries({ queryKey: ['employers'] });
+      toast.success('Employer created successfully');
       setIsCreateOpen(false);
       setFormData(initialFormData);
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error) || 'Failed to create admin');
+      toast.error(getErrorMessage(error) || 'Failed to create employer');
     },
   });
 
-  // Update admin mutation
+  // Update employer mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: AdminFormData }) => {
-      return await http.put(endpoints.user.update(id), data);
+    mutationFn: async ({ id, data }: { id: string; data: EmployerFormData }) => {
+      return await http.put(endpoints.employer.update(id), data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admins'] });
-      toast.success('Admin updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['employers'] });
+      toast.success('Employer updated successfully');
       setIsEditOpen(false);
-      setEditingAdmin(null);
+      setEditingEmployer(null);
       setFormData(initialFormData);
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error) || 'Failed to update admin');
+      toast.error(getErrorMessage(error) || 'Failed to update employer');
     },
   });
 
-  // Delete admin mutation
+  // Delete employer mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await http.delete(endpoints.user.delete(id));
+      return await http.delete(endpoints.employer.delete(id));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admins'] });
-      toast.success('Admin deactivated successfully');
-      setDeleteAdminId(null);
+      queryClient.invalidateQueries({ queryKey: ['employers'] });
+      toast.success('Employer deactivated successfully');
+      setDeleteEmployerId(null);
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error) || 'Failed to deactivate admin');
+      toast.error(getErrorMessage(error) || 'Failed to deactivate employer');
     },
   });
 
@@ -193,10 +165,6 @@ export default function UsersListPage() {
   const handleCreate = useThrottle(() => {
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
       toast.error('Please fill in all required fields');
-      return;
-    }
-    if (!formData.companyId) {
-      toast.error('Please select a company');
       return;
     }
     if (!formData.password || formData.password.length < 8) {
@@ -207,28 +175,30 @@ export default function UsersListPage() {
       toast.error('Passwords do not match');
       return;
     }
-    // Role and company assignment handled by backend
     createMutation.mutate(formData);
   }, 2000);
 
-  const handleEdit = (admin: IAdmin) => {
-    setEditingAdmin(admin);
+  const handleEdit = (employer: IEmployer) => {
+    setEditingEmployer(employer);
     setFormData({
-      firstName: admin.firstName,
-      lastName: admin.lastName,
-      email: admin.email,
+      firstName: employer.firstName,
+      lastName: employer.lastName,
+      email: employer.email,
+      mobile: employer.mobile || '',
+      designation: employer.designation || '',
+      department: employer.department || '',
     });
     setIsEditOpen(true);
   };
 
   // Throttled update handler - prevents double-click submissions (2 second delay)
   const handleUpdate = useThrottle(() => {
-    if (!editingAdmin) return;
+    if (!editingEmployer) return;
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
-    updateMutation.mutate({ id: editingAdmin.id, data: formData });
+    updateMutation.mutate({ id: editingEmployer.id, data: formData });
   }, 2000);
 
   // Throttled delete handler - prevents accidental double-clicks (2 second delay)
@@ -243,7 +213,7 @@ export default function UsersListPage() {
 
   const handleCloseEditDialog = () => {
     setIsEditOpen(false);
-    setEditingAdmin(null);
+    setEditingEmployer(null);
     setFormData(initialFormData);
   };
 
@@ -272,30 +242,27 @@ export default function UsersListPage() {
     });
   };
 
-  const activeAdmins = admins.filter((a: IAdmin) => a.isActive).length;
-  const verifiedAdmins = admins.filter((a: IAdmin) => a.isVerified).length;
+  const activeEmployers = employers.filter((e: IEmployer) => e.isActive).length;
+  const verifiedEmployers = employers.filter((e: IEmployer) => e.isVerified).length;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Admin Management</h1>
-          <p className="text-muted-foreground">Manage admin accounts and permissions</p>
+          <h1 className="text-3xl font-bold">Employers Management</h1>
+          <p className="text-muted-foreground">Manage employer accounts and company information</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add Admin
+              Add Employer
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New Admin</DialogTitle>
-              <DialogDescription>
-                Add a new admin account to the platform. The ADMIN role will be automatically
-                assigned.
-              </DialogDescription>
+              <DialogTitle>Create New Employer</DialogTitle>
+              <DialogDescription>Add a new employer account to the platform</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -324,46 +291,52 @@ export default function UsersListPage() {
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="email">
-                  Email <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder="john@admin.com"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">
+                    Email <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="john@company.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="mobile">Mobile</Label>
+                  <Input
+                    id="mobile"
+                    value={formData.mobile}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, mobile: e.target.value }))}
+                    placeholder="+91 9876543210"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="company">
-                  Company <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.companyId}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, companyId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select company to assign admin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.length === 0 ? (
-                      <SelectItem value="no-companies" disabled>
-                        No companies available
-                      </SelectItem>
-                    ) : (
-                      companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Admin will be scoped to this company
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="designation">Designation</Label>
+                  <Input
+                    id="designation"
+                    value={formData.designation}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, designation: e.target.value }))
+                    }
+                    placeholder="HR Manager"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="department">Department</Label>
+                  <Input
+                    id="department"
+                    value={formData.department}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, department: e.target.value }))
+                    }
+                    placeholder="Human Resources"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -375,11 +348,8 @@ export default function UsersListPage() {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    placeholder="e.g., Admin@123"
+                    placeholder="Min 8 characters"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Min 8 chars with uppercase, lowercase, number & special character
-                  </p>
                 </div>
                 <div>
                   <Label htmlFor="confirmPassword">
@@ -401,7 +371,7 @@ export default function UsersListPage() {
                   Cancel
                 </Button>
                 <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Creating...' : 'Create Admin'}
+                  {createMutation.isPending ? 'Creating...' : 'Create Employer'}
                 </Button>
               </div>
             </div>
@@ -413,7 +383,7 @@ export default function UsersListPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Admins</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Employers</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{total}</div>
@@ -421,18 +391,18 @@ export default function UsersListPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Admins</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Employers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeAdmins}</div>
+            <div className="text-2xl font-bold">{activeEmployers}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Verified Admins</CardTitle>
+            <CardTitle className="text-sm font-medium">Verified Employers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{verifiedAdmins}</div>
+            <div className="text-2xl font-bold">{verifiedEmployers}</div>
           </CardContent>
         </Card>
       </div>
@@ -444,7 +414,7 @@ export default function UsersListPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search admins by name, email..."
+                placeholder="Search employers by name, email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -454,21 +424,21 @@ export default function UsersListPage() {
         </CardContent>
       </Card>
 
-      {/* Admins Table */}
+      {/* Employers Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Admins List</CardTitle>
-          <CardDescription>View and manage all admin accounts</CardDescription>
+          <CardTitle>Employers List</CardTitle>
+          <CardDescription>View and manage all employer accounts</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <p className="text-muted-foreground">Loading admins...</p>
+              <p className="text-muted-foreground">Loading employers...</p>
             </div>
-          ) : admins.length === 0 ? (
+          ) : employers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No admins found</p>
+              <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No employers found</p>
             </div>
           ) : (
             <>
@@ -477,50 +447,58 @@ export default function UsersListPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>Mobile</TableHead>
+                    <TableHead>Designation</TableHead>
+                    <TableHead>Department</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {admins.map((admin: IAdmin) => (
-                    <TableRow key={admin.id}>
+                  {employers.map((employer: IEmployer) => (
+                    <TableRow key={employer.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-muted-foreground" />
-                          {admin.firstName} {admin.lastName}
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          {employer.firstName} {employer.lastName}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {isDeletedUser(admin.email) ? (
+                        {isDeletedUser(employer.email) ? (
                           <div className="flex flex-col">
                             <span className="text-muted-foreground italic">Deleted User</span>
                             <span
                               className="text-xs text-muted-foreground/60 truncate max-w-[200px]"
-                              title={admin.email}
+                              title={employer.email}
                             >
-                              {admin.email}
+                              {employer.email}
                             </span>
                           </div>
                         ) : (
-                          admin.email
+                          employer.email
                         )}
                       </TableCell>
-                      <TableCell>{admin.role || 'N/A'}</TableCell>
+                      <TableCell>{employer.mobile || 'N/A'}</TableCell>
+                      <TableCell>{employer.designation || 'N/A'}</TableCell>
+                      <TableCell>{employer.department || 'N/A'}</TableCell>
                       <TableCell>
-                        {getStatusBadge(getEffectiveActiveStatus(admin.email, admin.isActive))}
+                        {getStatusBadge(
+                          getEffectiveActiveStatus(employer.email, employer.isActive),
+                        )}
                       </TableCell>
-                      <TableCell>{formatDate(admin.createdAt)}</TableCell>
+                      <TableCell>{formatDate(employer.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEdit(admin)}
-                            disabled={isDeletedUser(admin.email)}
+                            onClick={() => handleEdit(employer)}
+                            disabled={isDeletedUser(employer.email)}
                             title={
-                              isDeletedUser(admin.email) ? 'Cannot edit deleted user' : 'Edit admin'
+                              isDeletedUser(employer.email)
+                                ? 'Cannot edit deleted user'
+                                : 'Edit employer'
                             }
                           >
                             <Edit className="h-4 w-4" />
@@ -528,10 +506,12 @@ export default function UsersListPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setDeleteAdminId(admin.id)}
-                            disabled={isDeletedUser(admin.email)}
+                            onClick={() => setDeleteEmployerId(employer.id)}
+                            disabled={isDeletedUser(employer.email)}
                             title={
-                              isDeletedUser(admin.email) ? 'User already deleted' : 'Delete admin'
+                              isDeletedUser(employer.email)
+                                ? 'User already deleted'
+                                : 'Delete employer'
                             }
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -548,7 +528,7 @@ export default function UsersListPage() {
                 <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-muted-foreground">
                     Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}{' '}
-                    admins
+                    employers
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
@@ -582,8 +562,8 @@ export default function UsersListPage() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Admin</DialogTitle>
-            <DialogDescription>Update admin account information</DialogDescription>
+            <DialogTitle>Edit Employer</DialogTitle>
+            <DialogDescription>Update employer account information</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -610,24 +590,57 @@ export default function UsersListPage() {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="edit-email">
-                Email <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                placeholder="john@admin.com"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-email">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder="john@company.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-mobile">Mobile</Label>
+                <Input
+                  id="edit-mobile"
+                  value={formData.mobile}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, mobile: e.target.value }))}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-designation">Designation</Label>
+                <Input
+                  id="edit-designation"
+                  value={formData.designation}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, designation: e.target.value }))
+                  }
+                  placeholder="HR Manager"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-department">Department</Label>
+                <Input
+                  id="edit-department"
+                  value={formData.department}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, department: e.target.value }))}
+                  placeholder="Human Resources"
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleCloseEditDialog}>
                 Cancel
               </Button>
               <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? 'Updating...' : 'Update Admin'}
+                {updateMutation.isPending ? 'Updating...' : 'Update Employer'}
               </Button>
             </div>
           </div>
@@ -635,19 +648,19 @@ export default function UsersListPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteAdminId} onOpenChange={() => setDeleteAdminId(null)}>
+      <AlertDialog open={!!deleteEmployerId} onOpenChange={() => setDeleteEmployerId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate Admin</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate Employer</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to deactivate this admin? This action will mark the admin as
-              inactive.
+              Are you sure you want to deactivate this employer? This action will mark the employer
+              as inactive.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteAdminId && handleDelete(deleteAdminId)}
+              onClick={() => deleteEmployerId && handleDelete(deleteEmployerId)}
               className="bg-red-500 hover:bg-red-600"
             >
               {deleteMutation.isPending ? 'Deactivating...' : 'Deactivate'}

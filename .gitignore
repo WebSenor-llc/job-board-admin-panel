@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vite temp files
+*.timestamp-*
+
+# AI Context
+CLAUDE.md
+.env
+.env.development
+.env.production
+.env.local
+.env.test
+

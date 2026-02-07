@@ -1,15 +1,25 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/use-toast';
 import config from '@/lib/config';
+import routePath from '@/routes/routePath';
 import { Lock, Mail, Loader2, Shield } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -23,6 +33,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
@@ -42,6 +53,7 @@ export function LoginForm() {
         title: 'Login successful',
         description: 'Welcome to the admin panel',
       });
+      navigate(routePath.DASHBOARD, { replace: true });
     } catch (error) {
       toast({
         title: 'Login failed',
@@ -87,9 +99,7 @@ export function LoginForm() {
                 {config.APP_NAME}
               </h1>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Secure access to your admin dashboard
-            </p>
+            <p className="text-sm text-muted-foreground">Secure access to your admin dashboard</p>
           </div>
         </CardHeader>
 
@@ -150,10 +160,7 @@ export function LoginForm() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
                       <FormLabel className="text-sm font-normal cursor-pointer">
                         Remember me
@@ -184,7 +191,6 @@ export function LoginForm() {
                   'Sign In'
                 )}
               </Button>
-
             </form>
           </Form>
         </CardContent>

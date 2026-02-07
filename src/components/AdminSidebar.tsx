@@ -1,6 +1,20 @@
-import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { BarChart3, Users, Menu, X, Shield, UserPlus, Settings, LogOut, Flag } from "lucide-react";
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import {
+  BarChart3,
+  Users,
+  Menu,
+  X,
+  Shield,
+  UserPlus,
+  LogOut,
+  Flag,
+  ChevronDown,
+  ChevronRight,
+  Building2,
+  UserCircle,
+  FileText,
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,22 +25,63 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/authStore";
-import routePath from "@/routes/routePath";
-import config from "@/lib/config";
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { useAuthStore, User } from '@/stores/authStore';
+import routePath from '@/routes/routePath';
+import config from '@/lib/config';
+import { getRoleDisplayName, getCompanyScopeInfo } from '@/lib/roleHelpers';
+import {
+  canManageCompanies,
+  canManageAdmins,
+  canModerateContent,
+  canViewAnalytics,
+} from '@/lib/permissions';
 
-const mainItems = [
-  { title: "Dashboard", url: routePath.DASHBOARD, icon: BarChart3 },
-  { title: "Users", url: routePath.USER.LIST, icon: Users },
-];
+// Menu items will be filtered based on user permissions
+const getAllMainItems = (user: User | null) =>
+  [
+    { title: 'Dashboard', url: routePath.DASHBOARD, icon: BarChart3, show: canViewAnalytics(user) },
+    { title: 'Admins', url: routePath.USER.LIST, icon: Users, show: canManageAdmins(user) },
+  ].filter((item) => item.show);
 
-const adminItems = [
-  { title: "Role Management", url: routePath.ROLE.LIST, icon: Shield },
-  { title: "Members", url: routePath.MEMBER.LIST, icon: UserPlus },
-  { title: "Post Moderation", url: routePath.MODERATION.LIST, icon: Flag },
-];
+const getAllAdminItems = (user: User | null) =>
+  [
+    {
+      title: 'Role Management',
+      url: routePath.ROLE.LIST,
+      icon: Shield,
+      show: user?.role === 'super_admin',
+    },
+    {
+      title: 'Members',
+      url: routePath.MEMBER.LIST,
+      icon: UserPlus,
+      show: user?.role === 'admin' || user?.role === 'super_admin',
+      subItems: [
+        { title: 'Candidates', url: routePath.MEMBER.CANDIDATES, icon: UserCircle },
+        { title: 'Employers', url: routePath.MEMBER.EMPLOYERS, icon: Building2 },
+      ],
+    },
+    {
+      title: 'Companies',
+      url: routePath.COMPANY.LIST,
+      icon: Building2,
+      show: canManageCompanies(user),
+    },
+    {
+      title: 'Post Moderation',
+      url: routePath.MODERATION.LIST,
+      icon: Flag,
+      show: canModerateContent(user),
+    },
+    {
+      title: 'Resume Templates',
+      url: routePath.RESUME_TEMPLATES.LIST,
+      icon: FileText,
+      show: user?.role === 'super_admin',
+    },
+  ].filter((item) => item.show);
 
 // const settingsItems = [
 //   { title: "Settings", url: "/settings", icon: Settings },
@@ -36,8 +91,13 @@ export function AdminSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  const isCollapsed = state === "collapsed";
+  const isCollapsed = state === 'collapsed';
   const { logout, user } = useAuthStore();
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Members']);
+
+  // Get filtered menu items based on user role and permissions
+  const mainItems = getAllMainItems(user);
+  const adminItems = getAllAdminItems(user);
 
   const isActive = (path: string) => {
     if (path === routePath.DASHBOARD) return currentPath === routePath.DASHBOARD;
@@ -46,37 +106,34 @@ export function AdminSidebar() {
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive
-      ? "bg-sidebar-accent text-sidebar-primary font-medium"
-      : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
+      ? 'bg-sidebar-accent text-sidebar-primary font-medium'
+      : 'hover:bg-sidebar-accent/50 text-sidebar-foreground';
 
   const handleLogout = () => {
     logout();
   };
 
+  const toggleMenu = (menuTitle: string) => {
+    setExpandedMenus((prev) =>
+      prev.includes(menuTitle) ? prev.filter((item) => item !== menuTitle) : [...prev, menuTitle],
+    );
+  };
+
+  const isMenuExpanded = (menuTitle: string) => expandedMenus.includes(menuTitle);
+
   return (
-    <Sidebar
-      className="border-r border-sidebar-border bg-sidebar"
-      collapsible="icon"
-    >
+    <Sidebar className="border-r border-sidebar-border bg-sidebar" collapsible="icon">
       <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
         {!isCollapsed ? (
           <div className="flex items-center space-x-3 flex-1">
-            <img
-              src={config.LOGO_URL}
-              alt={config.APP_NAME}
-              className="h-10 w-10 object-contain"
-            />
+            <img src={config.LOGO_URL} alt={config.APP_NAME} className="h-10 w-10 object-contain" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-sidebar-foreground">{config.APP_NAME}</p>
               <p className="text-xs text-sidebar-foreground/70 truncate">Admin Panel</p>
             </div>
           </div>
         ) : (
-          <img
-            src="/logo.png"
-            alt="Logo"
-            className="h-8 w-8 object-contain"
-          />
+          <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
         )}
         <Button
           variant="ghost"
@@ -102,7 +159,7 @@ export function AdminSidebar() {
                       to={item.url}
                       end={item.url === routePath.DASHBOARD}
                       className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${getNavCls(
-                        { isActive: isActive(item.url) }
+                        { isActive: isActive(item.url) },
                       )}`}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -123,18 +180,60 @@ export function AdminSidebar() {
             <SidebarMenu className="space-y-1">
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === routePath.DASHBOARD}
-                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${getNavCls(
-                        { isActive: isActive(item.url) }
-                      )}`}
-                    >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+                  {item.subItems ? (
+                    <div>
+                      <SidebarMenuButton asChild>
+                        <button
+                          onClick={() => toggleMenu(item.title)}
+                          className={`w-full flex items-center justify-between space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                            isActive(item.url)
+                              ? 'bg-sidebar-accent text-sidebar-primary font-medium'
+                              : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <item.icon className="h-5 w-5 flex-shrink-0" />
+                            {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                          </div>
+                          {!isCollapsed &&
+                            (isMenuExpanded(item.title) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            ))}
+                        </button>
+                      </SidebarMenuButton>
+                      {!isCollapsed && isMenuExpanded(item.title) && (
+                        <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-4">
+                          {item.subItems.map((subItem) => (
+                            <NavLink
+                              key={subItem.title}
+                              to={subItem.url}
+                              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${getNavCls(
+                                { isActive: isActive(subItem.url) },
+                              )}`}
+                            >
+                              <subItem.icon className="h-4 w-4 flex-shrink-0" />
+                              <span>{subItem.title}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === routePath.DASHBOARD}
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${getNavCls(
+                          { isActive: isActive(item.url) },
+                        )}`}
+                      >
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -170,20 +269,32 @@ export function AdminSidebar() {
 
         <div className="mt-auto pt-4 border-t border-sidebar-border space-y-2">
           {!isCollapsed && (
-            <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-sidebar-accent/50">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-foreground text-sm font-bold">
-                  {user?.name?.charAt(0) || 'A'}
-                </span>
+            <div className="px-3 py-2 rounded-lg bg-sidebar-accent/50 space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary-foreground text-sm font-bold">
+                    {user?.name?.charAt(0) || user?.email?.charAt(0) || 'A'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    {user?.email || 'Admin User'}
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/70 truncate">
+                    {user?.role ? getRoleDisplayName(user.role) : 'Administrator'}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {user?.name || 'Admin User'}
-                </p>
-                <p className="text-xs text-sidebar-foreground/70 truncate">
-                  {user?.role || 'Administrator'}
-                </p>
-              </div>
+              {user && (
+                <div className="pl-11">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Building2 className="h-3 w-3 text-sidebar-foreground/60" />
+                    <span className="text-sidebar-foreground/60 truncate">
+                      {getCompanyScopeInfo(user)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <Button
