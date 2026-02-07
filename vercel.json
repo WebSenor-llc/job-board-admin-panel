@@ -1,8 +1,0 @@
-{
-  "functions": {
-    "api/v1/[...path].js": {
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  }
-}
