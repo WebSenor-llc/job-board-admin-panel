@@ -29,8 +29,6 @@ dist-ssr
 # AI Context
 CLAUDE.md
 .env
-.env.development
-.env.production
-.env.local
-.env.test
+.env.*
+!.env.example
 
