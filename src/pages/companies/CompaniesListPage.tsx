@@ -251,20 +251,33 @@ export default function CompaniesListPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      const cleanedData = cleanFormData(data);
-      const response = await http.post(endpoints.company.create, cleanedData);
+      // Build FormData for multipart/form-data request
+      const formData = new FormData();
 
-      // Upload logo and banner if files are selected
-      if (logoFile && response.id) {
-        await uploadCompanyImage(response.id, logoFile, 'logo');
+      // Append all text fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          formData.append(key, String(value));
+        }
+      });
+
+      // Append file fields if they exist
+      if (logoFile) {
+        formData.append('logo', logoFile);
       }
-      if (bannerFile && response.id) {
-        await uploadCompanyImage(response.id, bannerFile, 'banner');
+      if (bannerFile) {
+        formData.append('banner', bannerFile);
       }
-      // Upload verification document if file is selected
-      if (verificationDocFile && response.id) {
-        await uploadVerificationDocument(response.id, verificationDocFile);
+      if (verificationDocFile) {
+        formData.append('verificationDocument', verificationDocFile);
       }
+
+      // Send as multipart/form-data (backend will detect content-type and handle files)
+      const response = await http.post(endpoints.company.create, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       return response;
     },

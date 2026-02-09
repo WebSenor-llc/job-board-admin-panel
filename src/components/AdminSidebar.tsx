@@ -8,7 +8,6 @@ import {
   Shield,
   UserPlus,
   LogOut,
-  Flag,
   ChevronDown,
   ChevronRight,
   Building2,
@@ -31,12 +30,7 @@ import { useAuthStore, User } from '@/stores/authStore';
 import routePath from '@/routes/routePath';
 import config from '@/lib/config';
 import { getRoleDisplayName, getCompanyScopeInfo } from '@/lib/roleHelpers';
-import {
-  canManageCompanies,
-  canManageAdmins,
-  canModerateContent,
-  canViewAnalytics,
-} from '@/lib/permissions';
+import { canManageCompanies, canManageAdmins, canViewAnalytics } from '@/lib/permissions';
 
 // Menu items will be filtered based on user permissions
 const getAllMainItems = (user: User | null) =>
@@ -68,12 +62,6 @@ const getAllAdminItems = (user: User | null) =>
       url: routePath.COMPANY.LIST,
       icon: Building2,
       show: canManageCompanies(user),
-    },
-    {
-      title: 'Post Moderation',
-      url: routePath.MODERATION.LIST,
-      icon: Flag,
-      show: canModerateContent(user),
     },
     {
       title: 'Resume Templates',
