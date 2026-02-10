@@ -12,13 +12,17 @@ const endpoints = {
     details: (id: string) => `/categories/${id}`,
   },
   role: {
-    create: '/admin/role',
-    list: '/admin/role/list',
-    getPermissions: '/admin/permission',
-    getOptions: '/admin/role/options',
-    details: (id: string) => `/admin/role/${id}`,
-    update: (id: string) => `/admin/role/${id}`,
-    delete: (id: string) => `/admin/role/${id}`,
+    create: '/rbac/roles',
+    list: '/rbac/roles',
+    details: (id: string) => `/rbac/roles/${id}`,
+    update: (id: string) => `/rbac/roles/${id}`,
+    delete: (id: string) => `/rbac/roles/${id}`,
+    assignPermissions: (id: string) => `/rbac/roles/${id}/permissions`,
+  },
+  permission: {
+    list: '/rbac/permissions',
+    create: '/rbac/permissions',
+    details: (id: string) => `/rbac/permissions/${id}`,
   },
   user: {
     create: '/admin/admins',
@@ -88,6 +92,9 @@ const endpoints = {
     uploadLogo: (id: string) => `/companies/${id}/logo`,
     uploadBanner: (id: string) => `/companies/${id}/banner`,
     uploadVerificationDocument: (id: string) => `/companies/${id}/verification-document`,
+    // Admin-specific endpoints (for admin's own company)
+    adminProfile: '/companies/admin/profile',
+    updateAdminProfile: '/companies/admin/profile',
   },
   resumeTemplates: {
     create: '/resume-templates',

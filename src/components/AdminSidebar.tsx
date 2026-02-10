@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -53,15 +54,31 @@ const getAllAdminItems = (user: User | null) =>
       icon: UserPlus,
       show: user?.role === 'admin' || user?.role === 'super_admin',
       subItems: [
-        { title: 'Candidates', url: routePath.MEMBER.CANDIDATES, icon: UserCircle },
-        { title: 'Employers', url: routePath.MEMBER.EMPLOYERS, icon: Building2 },
+        {
+          title: 'Candidates',
+          url: routePath.MEMBER.CANDIDATES,
+          icon: UserCircle,
+          show: user?.role === 'super_admin', // Only super_admin can see candidates
+        },
+        {
+          title: 'Employers',
+          url: routePath.MEMBER.EMPLOYERS,
+          icon: Building2,
+          show: user?.role === 'admin' || user?.role === 'super_admin', // Both can see employers
+        },
       ],
+    },
+    {
+      title: 'Company',
+      url: routePath.COMPANY.PROFILE,
+      icon: Building2,
+      show: user?.role === 'admin' && !!user?.companyId, // Show for admins with company assigned
     },
     {
       title: 'Companies',
       url: routePath.COMPANY.LIST,
       icon: Building2,
-      show: canManageCompanies(user),
+      show: canManageCompanies(user), // Show for super_admin
     },
     {
       title: 'Resume Templates',
@@ -193,18 +210,20 @@ export function AdminSidebar() {
                       </SidebarMenuButton>
                       {!isCollapsed && isMenuExpanded(item.title) && (
                         <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-4">
-                          {item.subItems.map((subItem) => (
-                            <NavLink
-                              key={subItem.title}
-                              to={subItem.url}
-                              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${getNavCls(
-                                { isActive: isActive(subItem.url) },
-                              )}`}
-                            >
-                              <subItem.icon className="h-4 w-4 flex-shrink-0" />
-                              <span>{subItem.title}</span>
-                            </NavLink>
-                          ))}
+                          {item.subItems
+                            .filter((subItem: any) => subItem.show !== false)
+                            .map((subItem: any) => (
+                              <NavLink
+                                key={subItem.title}
+                                to={subItem.url}
+                                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${getNavCls(
+                                  { isActive: isActive(subItem.url) },
+                                )}`}
+                              >
+                                <subItem.icon className="h-4 w-4 flex-shrink-0" />
+                                <span>{subItem.title}</span>
+                              </NavLink>
+                            ))}
                         </div>
                       )}
                     </div>

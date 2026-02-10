@@ -23,6 +23,7 @@ const EmployersListPage = lazy(() => import('@/pages/members/EmployersListPage')
 // Companies
 const CompaniesListPage = lazy(() => import('@/pages/companies/CompaniesListPage'));
 const CompanyDetailsPage = lazy(() => import('@/pages/companies/CompanyDetailsPage'));
+const AdminCompanyProfilePage = lazy(() => import('@/pages/companies/AdminCompanyProfilePage'));
 
 // Resume Templates
 const ResumeTemplatesListPage = lazy(
@@ -80,6 +81,10 @@ const allRoutes = [
   {
     path: routePath.COMPANY.DETAILS,
     element: <CompanyDetailsPage />,
+  },
+  {
+    path: routePath.COMPANY.PROFILE,
+    element: <AdminCompanyProfilePage />,
   },
   {
     path: routePath.RESUME_TEMPLATES.LIST,

@@ -37,6 +37,7 @@ const routePath = {
     CREATE: '/companies/create',
     EDIT: '/companies/edit/:id',
     DETAILS: '/companies/details/:id',
+    PROFILE: '/company/profile', // Admin's own company profile
   },
   RESUME_TEMPLATES: {
     LIST: '/resume-templates/list',

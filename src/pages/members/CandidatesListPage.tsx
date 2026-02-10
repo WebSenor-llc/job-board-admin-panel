@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, Users, CheckCircle, XCircle } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useThrottle } from '@/hooks/useThrottle';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/stores/authStore';
+import routePath from '@/routes/routePath';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -97,7 +100,17 @@ const initialFormData: CandidateFormData = {
 };
 
 export default function CandidatesListPage() {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
+
+  // Redirect non-super_admin users
+  useEffect(() => {
+    if (user && user.role !== 'super_admin') {
+      toast.error('Access denied. Only super admins can view candidates.');
+      navigate(routePath.DASHBOARD, { replace: true });
+    }
+  }, [user, navigate]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
