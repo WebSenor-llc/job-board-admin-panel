@@ -145,6 +145,10 @@ export default function CandidatesListPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  // Status toggle states
+  const [statusToggleCandidate, setStatusToggleCandidate] = useState<Candidate | null>(null);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+
   // Fetch candidates list with pagination (uses debounced search to reduce API calls)
   const {
     data: candidatesData,
@@ -257,6 +261,23 @@ export default function CandidatesListPage() {
     },
   });
 
+  // Toggle status mutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: 'active' | 'suspended' }) => {
+      return await http.put(endpoints.user.updateStatus(id), { status });
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      const action = variables.status === 'active' ? 'activated' : 'suspended';
+      toast.success(`Candidate ${action} successfully`);
+      setIsStatusDialogOpen(false);
+      setStatusToggleCandidate(null);
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || 'Failed to update candidate status');
+    },
+  });
+
   // Throttled create handler - prevents double-click submissions (2 second delay)
   const handleCreate = useThrottle(() => {
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
@@ -303,6 +324,23 @@ export default function CandidatesListPage() {
     deleteMutation.mutate(id);
   }, 2000);
 
+  // Handle status badge click
+  const handleStatusClick = (candidate: Candidate) => {
+    // Don't allow status toggle for deleted users
+    if (isDeletedUser(candidate.email)) {
+      return;
+    }
+    setStatusToggleCandidate(candidate);
+    setIsStatusDialogOpen(true);
+  };
+
+  // Handle status toggle confirmation
+  const handleStatusToggle = () => {
+    if (!statusToggleCandidate) return;
+    const newStatus = statusToggleCandidate.isActive ? 'suspended' : 'active';
+    toggleStatusMutation.mutate({ id: statusToggleCandidate.id, status: newStatus });
+  };
+
   const handleCloseCreateDialog = () => {
     setIsCreateOpen(false);
     setFormData(initialFormData);
@@ -314,19 +352,41 @@ export default function CandidatesListPage() {
     setFormData(initialFormData);
   };
 
-  const getStatusBadge = (isActive: boolean) => {
+  const getStatusBadge = (candidate: Candidate) => {
+    const isDeleted = isDeletedUser(candidate.email);
+    const isActive = getEffectiveActiveStatus(candidate.email, candidate.isActive);
+
+    // Deleted users - red badge, non-clickable
+    if (isDeleted) {
+      return (
+        <Badge className="bg-red-100 text-red-800 flex items-center gap-1 w-fit">
+          <XCircle className="h-3 w-3" />
+          Deleted
+        </Badge>
+      );
+    }
+
+    // Active users - green badge, clickable
     if (isActive) {
       return (
-        <Badge className="bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+        <Badge
+          className="bg-green-100 text-green-800 hover:bg-green-200 flex items-center gap-1 w-fit cursor-pointer transition-colors"
+          onClick={() => handleStatusClick(candidate)}
+        >
           <CheckCircle className="h-3 w-3" />
           Active
         </Badge>
       );
     }
+
+    // Suspended users - gray badge, clickable
     return (
-      <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+      <Badge
+        className="bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-1 w-fit cursor-pointer transition-colors"
+        onClick={() => handleStatusClick(candidate)}
+      >
         <XCircle className="h-3 w-3" />
-        Inactive
+        Suspended
       </Badge>
     );
   };
@@ -627,7 +687,6 @@ export default function CandidatesListPage() {
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="suspended">Suspended</SelectItem>
-                    <SelectItem value="deleted">Deleted</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -739,11 +798,7 @@ export default function CandidatesListPage() {
                       <TableCell>{candidate.phone || candidate.mobile || 'N/A'}</TableCell>
                       <TableCell>{candidate.location || 'N/A'}</TableCell>
                       <TableCell>{candidate.experience || 'N/A'}</TableCell>
-                      <TableCell>
-                        {getStatusBadge(
-                          getEffectiveActiveStatus(candidate.email, candidate.isActive),
-                        )}
-                      </TableCell>
+                      <TableCell>{getStatusBadge(candidate)}</TableCell>
                       <TableCell>{formatDate(candidate.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
@@ -928,6 +983,57 @@ export default function CandidatesListPage() {
               className="bg-red-500 hover:bg-red-600"
             >
               {deleteMutation.isPending ? 'Deactivating...' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Status Toggle Confirmation Dialog */}
+      <AlertDialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusToggleCandidate?.isActive ? 'Suspend Candidate?' : 'Activate Candidate?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {statusToggleCandidate?.isActive ? (
+                <>
+                  Are you sure you want to suspend{' '}
+                  <strong>
+                    {statusToggleCandidate.firstName} {statusToggleCandidate.lastName}
+                  </strong>
+                  ?<br />
+                  The candidate will not be able to login until reactivated.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to activate{' '}
+                  <strong>
+                    {statusToggleCandidate?.firstName} {statusToggleCandidate?.lastName}
+                  </strong>
+                  ?<br />
+                  The candidate will be able to login again.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleStatusToggle}
+              className={
+                statusToggleCandidate?.isActive
+                  ? 'bg-orange-500 hover:bg-orange-600'
+                  : 'bg-green-500 hover:bg-green-600'
+              }
+            >
+              {toggleStatusMutation.isPending
+                ? statusToggleCandidate?.isActive
+                  ? 'Suspending...'
+                  : 'Activating...'
+                : statusToggleCandidate?.isActive
+                  ? 'Suspend'
+                  : 'Activate'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
