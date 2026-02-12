@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Building2, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Building2,
+  CheckCircle,
+  XCircle,
+  ArrowUpDown,
+  X,
+} from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useThrottle } from '@/hooks/useThrottle';
 import { toast } from 'sonner';
@@ -25,6 +35,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -83,14 +100,34 @@ export default function EmployersListPage() {
   const [formData, setFormData] = useState<EmployerFormData>(initialFormData);
   const [editingEmployer, setEditingEmployer] = useState<IEmployer | null>(null);
 
+  // Filter states
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   // Fetch employers list with pagination (uses debounced search to reduce API calls)
   const { data: employersData, isLoading } = useQuery({
-    queryKey: ['employers', page, limit, debouncedSearchQuery],
+    queryKey: [
+      'employers',
+      page,
+      limit,
+      debouncedSearchQuery,
+      fromDate,
+      toDate,
+      statusFilter,
+      sortOrder,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
+        ...(fromDate && { fromDate }),
+        ...(toDate && { toDate }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        sortBy: 'createdAt',
+        sortOrder,
       });
       const response = await http.get(`${endpoints.employer.list}?${params}`);
       return response as unknown as EmployerApiResponse;
@@ -410,15 +447,153 @@ export default function EmployersListPage() {
       {/* Search and Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search employers by name, email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search employers by name, email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    type="button"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="fromDate" className="text-sm mb-2 block">
+                  From Date
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="fromDate"
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => {
+                      setFromDate(e.target.value);
+                      setPage(1);
+                    }}
+                    className="pr-10 cursor-pointer"
+                    onClick={(e) => {
+                      const input = e.currentTarget;
+                      if (input.showPicker) {
+                        input.showPicker();
+                      }
+                    }}
+                  />
+                  {fromDate && (
+                    <button
+                      onClick={() => {
+                        setFromDate('');
+                        setPage(1);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      type="button"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="toDate" className="text-sm mb-2 block">
+                  To Date
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="toDate"
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => {
+                      setToDate(e.target.value);
+                      setPage(1);
+                    }}
+                    className="pr-10 cursor-pointer"
+                    onClick={(e) => {
+                      const input = e.currentTarget;
+                      if (input.showPicker) {
+                        input.showPicker();
+                      }
+                    }}
+                  />
+                  {toDate && (
+                    <button
+                      onClick={() => {
+                        setToDate('');
+                        setPage(1);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      type="button"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="status" className="text-sm mb-2 block">
+                  Status
+                </Label>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value) => {
+                    setStatusFilter(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="sortOrder" className="text-sm mb-2 block">
+                  Created At
+                </Label>
+                <Select
+                  value={sortOrder}
+                  onValueChange={(value: 'asc' | 'desc') => {
+                    setSortOrder(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger id="sortOrder">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="desc">
+                      <div className="flex items-center gap-2">
+                        <ArrowUpDown className="h-4 w-4" />
+                        Newest First
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="asc">
+                      <div className="flex items-center gap-2">
+                        <ArrowUpDown className="h-4 w-4" />
+                        Oldest First
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardContent>

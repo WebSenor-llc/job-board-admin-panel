@@ -28,7 +28,12 @@ http.interceptors.response.use(
   (error) => {
     if (error.response) {
       const status = error.response.status;
-      const message = error?.response?.data?.message || 'An error occurred';
+      let message = error?.response?.data?.message || 'An error occurred';
+
+      // Handle validation errors (array of messages)
+      if (Array.isArray(message)) {
+        message = message.join(', ');
+      }
 
       if (status === 401) {
         // Show the actual error message before logging out
@@ -48,6 +53,15 @@ http.interceptors.response.use(
         // Permission denied
         toast.error(message || "You don't have permission to access this resource");
         console.error('403 Forbidden:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          message: message,
+          data: error.response.data,
+        });
+      } else if (status === 400) {
+        // Validation error
+        toast.error(message || 'Invalid request. Please check your input.');
+        console.error('400 Bad Request:', {
           url: error.config?.url,
           method: error.config?.method,
           message: message,
