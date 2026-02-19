@@ -14,6 +14,10 @@ import {
   Building2,
   UserCircle,
   FileText,
+  Video,
+  Database,
+  Zap,
+  GraduationCap,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -86,6 +90,32 @@ const getAllAdminItems = (user: User | null) =>
       icon: FileText,
       show: user?.role === 'super_admin',
     },
+    {
+      title: 'Video Resume',
+      url: routePath.VIDEO_RESUME.LIST,
+      icon: Video,
+      show: user?.role === 'super_admin',
+    },
+    {
+      title: 'Master Data',
+      url: routePath.MASTER_DATA.SKILLS,
+      icon: Database,
+      show: user?.role === 'super_admin',
+      subItems: [
+        {
+          title: 'Skills',
+          url: routePath.MASTER_DATA.SKILLS,
+          icon: Zap,
+          show: true,
+        },
+        {
+          title: 'Education',
+          url: routePath.MASTER_DATA.EDUCATION,
+          icon: GraduationCap,
+          show: true,
+        },
+      ],
+    },
   ].filter((item) => item.show);
 
 // const settingsItems = [
@@ -98,7 +128,7 @@ export function AdminSidebar() {
   const currentPath = location.pathname;
   const isCollapsed = state === 'collapsed';
   const { logout, user } = useAuthStore();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Members']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Members', 'Master Data']);
 
   // Get filtered menu items based on user role and permissions
   const mainItems = getAllMainItems(user);

@@ -44,6 +44,13 @@ const routePath = {
     CREATE: '/resume-templates/create',
     EDIT: '/resume-templates/edit/:id',
   },
+  VIDEO_RESUME: {
+    LIST: '/video-resume/list',
+  },
+  MASTER_DATA: {
+    SKILLS: '/master-data/skills',
+    EDUCATION: '/master-data/education',
+  },
 };
 
 export default routePath;

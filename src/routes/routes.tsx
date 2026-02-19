@@ -30,6 +30,13 @@ const ResumeTemplatesListPage = lazy(
   () => import('@/pages/resumeTemplates/ResumeTemplatesListPage'),
 );
 
+// Video Resume
+const VideoResumeListPage = lazy(() => import('@/pages/videoResume/VideoResumeListPage'));
+
+// Master Data
+const SkillsListPage = lazy(() => import('@/pages/masterData/SkillsListPage'));
+const EducationPage = lazy(() => import('@/pages/masterData/EducationPage'));
+
 // Moderation
 const ModerationListPage = lazy(() => import('@/pages/moderation/ModerationListPage'));
 
@@ -91,8 +98,20 @@ const allRoutes = [
     element: <ResumeTemplatesListPage />,
   },
   {
+    path: routePath.VIDEO_RESUME.LIST,
+    element: <VideoResumeListPage />,
+  },
+  {
     path: routePath.MODERATION.LIST,
     element: <ModerationListPage />,
+  },
+  {
+    path: routePath.MASTER_DATA.SKILLS,
+    element: <SkillsListPage />,
+  },
+  {
+    path: routePath.MASTER_DATA.EDUCATION,
+    element: <EducationPage />,
   },
 
   // Redirect root to dashboard

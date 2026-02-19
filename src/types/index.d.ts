@@ -238,3 +238,60 @@ export interface IResumeTemplate {
   displayOrder: number;
   createdAt: string;
 }
+
+// Skill Types
+export type SkillType = 'master-typed' | 'user-typed';
+
+export type SkillCategory = 'technical' | 'soft' | 'language' | 'industry_specific';
+
+export interface ISkill {
+  id: string;
+  name: string;
+  type: SkillType;
+  category: SkillCategory;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// Education Master Data Types
+export type EducationLevel =
+  | 'high_school'
+  | 'bachelors'
+  | 'masters'
+  | 'phd'
+  | 'diploma'
+  | 'certificate';
+
+export interface IMasterDegree {
+  id: string;
+  name: string;
+  level: EducationLevel;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface IMasterFieldOfStudy {
+  id: string;
+  degreeId: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// Video Resume Types
+export type VideoModerationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface IVideoResume {
+  id: string;
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  videoResumeUrl: string;
+  videoUrl?: string;
+  videoProfileStatus: VideoModerationStatus | null;
+  videoRejectionReason: string | null;
+  videoUploadedAt: string | null;
+}
