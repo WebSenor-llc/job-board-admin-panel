@@ -106,6 +106,28 @@ const endpoints = {
     updateStatus: (id: string) => `/resume-templates/${id}/status`,
     updateOrder: (id: string) => `/resume-templates/${id}/order`,
   },
+  videoResume: {
+    list: '/admin/videos',
+    updateStatus: (profileId: string) => `/admin/profile/${profileId}/video/status`,
+  },
+  skills: {
+    list: '/master-data/skills',
+    create: '/skills',
+    update: (id: string) => `/skills/${id}`,
+    delete: (id: string) => `/skills/${id}`,
+  },
+  degrees: {
+    list: '/master-data/degrees',
+    create: '/master-data/degrees',
+    update: (id: string) => `/master-data/degrees/${id}`,
+    delete: (id: string) => `/master-data/degrees/${id}`,
+    fieldsOfStudy: (degreeId: string) => `/master-data/degrees/${degreeId}/fields-of-study`,
+  },
+  fieldsOfStudy: {
+    create: (degreeId: string) => `/master-data/degrees/${degreeId}/fields-of-study`,
+    update: (id: string) => `/master-data/fields-of-study/${id}`,
+    delete: (id: string) => `/master-data/fields-of-study/${id}`,
+  },
 };
 
 export default endpoints;
