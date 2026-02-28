@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit, Trash2, FileText, Image } from 'lucide-react';
@@ -125,9 +126,10 @@ export default function ResumeTemplatesListPage() {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: TemplateFormData) => {
-      const response = await http.post(endpoints.resumeTemplates.create, data);
-      if (thumbnailFile && response.id) {
-        await uploadThumbnail(response.id, thumbnailFile);
+      const response: any = await http.post(endpoints.resumeTemplates.create, data);
+      const templateId = response?.data?.id || response?.id;
+      if (thumbnailFile && templateId) {
+        await uploadThumbnail(templateId, thumbnailFile);
       }
       return response;
     },
