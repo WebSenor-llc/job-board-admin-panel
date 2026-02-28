@@ -128,6 +128,16 @@ const endpoints = {
     update: (id: string) => `/master-data/fields-of-study/${id}`,
     delete: (id: string) => `/master-data/fields-of-study/${id}`,
   },
+  avatars: {
+    create: '/avatars',
+    list: '/avatars',
+    details: (id: string) => `/avatars/${id}`,
+    update: (id: string) => `/avatars/${id}`,
+    updateStatus: (id: string) => `/avatars/${id}/status`,
+    updateOrder: (id: string) => `/avatars/${id}/order`,
+    updateImage: (id: string) => `/avatars/${id}/image`,
+    delete: (id: string) => `/avatars/${id}`,
+  },
 };
 
 export default endpoints;

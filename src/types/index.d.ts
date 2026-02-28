@@ -305,3 +305,17 @@ export interface IVideoResume {
   videoRejectionReason: string | null;
   videoUploadedAt: string | null;
 }
+
+// Avatar Types
+export type AvatarGender = 'male' | 'female' | 'other';
+
+export interface IAvatar {
+  id: string;
+  name: string;
+  imageUrl: string;
+  gender: AvatarGender;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt?: string;
+}

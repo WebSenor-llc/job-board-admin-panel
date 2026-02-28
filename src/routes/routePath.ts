@@ -51,6 +51,9 @@ const routePath = {
     SKILLS: '/master-data/skills',
     EDUCATION: '/master-data/education',
   },
+  AVATARS: {
+    LIST: '/avatars/list',
+  },
 };
 
 export default routePath;

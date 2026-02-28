@@ -18,6 +18,7 @@ import {
   Database,
   Zap,
   GraduationCap,
+  Image,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -99,6 +100,12 @@ const getAllAdminItems = (user: User | null) =>
       title: 'Video Resume',
       url: routePath.VIDEO_RESUME.LIST,
       icon: Video,
+      show: user?.role === 'super_admin',
+    },
+    {
+      title: 'Avatars',
+      url: routePath.AVATARS.LIST,
+      icon: Image,
       show: user?.role === 'super_admin',
     },
     {
