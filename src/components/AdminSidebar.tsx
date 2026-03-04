@@ -20,6 +20,8 @@ import {
   GraduationCap,
   Image,
   Filter,
+  CreditCard,
+  Package,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -135,6 +137,26 @@ const getAllAdminItems = (user: User | null) =>
         },
       ],
     },
+    {
+      title: 'Subscriptions',
+      url: routePath.SUBSCRIPTIONS.PLANS,
+      icon: CreditCard,
+      show: user?.role === 'super_admin',
+      subItems: [
+        {
+          title: 'Plans',
+          url: routePath.SUBSCRIPTIONS.PLANS,
+          icon: Package,
+          show: true,
+        },
+        {
+          title: 'Active Subscriptions',
+          url: routePath.SUBSCRIPTIONS.ACTIVE,
+          icon: Users,
+          show: true,
+        },
+      ],
+    },
   ].filter((item) => item.show);
 
 // const settingsItems = [
@@ -147,7 +169,11 @@ export function AdminSidebar() {
   const currentPath = location.pathname;
   const isCollapsed = state === 'collapsed';
   const { logout, user } = useAuthStore();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Members', 'Master Data']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([
+    'Members',
+    'Master Data',
+    'Subscriptions',
+  ]);
 
   // Get filtered menu items based on user role and permissions
   const mainItems = getAllMainItems(user);

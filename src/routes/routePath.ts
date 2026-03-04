@@ -55,6 +55,10 @@ const routePath = {
   AVATARS: {
     LIST: '/avatars/list',
   },
+  SUBSCRIPTIONS: {
+    PLANS: '/subscriptions/plans',
+    ACTIVE: '/subscriptions/active',
+  },
 };
 
 export default routePath;

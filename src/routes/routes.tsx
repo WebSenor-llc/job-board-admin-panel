@@ -44,6 +44,10 @@ const JobFiltersListPage = lazy(() => import('@/pages/masterData/JobFiltersListP
 // Moderation
 const ModerationListPage = lazy(() => import('@/pages/moderation/ModerationListPage'));
 
+// Subscriptions
+const SubscriptionPlansPage = lazy(() => import('@/pages/subscriptions/SubscriptionPlansPage'));
+const SubscriptionsListPage = lazy(() => import('@/pages/subscriptions/SubscriptionsListPage'));
+
 const allRoutes = [
   // Auth routes (no layout)
   {
@@ -124,6 +128,14 @@ const allRoutes = [
   {
     path: routePath.MASTER_DATA.JOB_FILTERS,
     element: <JobFiltersListPage />,
+  },
+  {
+    path: routePath.SUBSCRIPTIONS.PLANS,
+    element: <SubscriptionPlansPage />,
+  },
+  {
+    path: routePath.SUBSCRIPTIONS.ACTIVE,
+    element: <SubscriptionsListPage />,
   },
 
   // Redirect root to dashboard

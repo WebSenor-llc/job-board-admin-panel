@@ -343,3 +343,58 @@ export interface IFilterOption {
   createdAt: string;
   updatedAt?: string;
 }
+
+// Subscription Types
+export type BillingCycle = 'one_time' | 'monthly' | 'quarterly' | 'yearly';
+export type SubscriptionStatus = 'active' | 'inactive' | 'canceled' | 'expired';
+
+export interface ISubscriptionPlan {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  currency: string;
+  billingCycle: BillingCycle;
+  features: string[];
+  jobPostLimit: number;
+  resumeAccessLimit: number;
+  featuredJobs: number;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ISubscription {
+  id: string;
+  employerId: string;
+  plan: string;
+  planId: string;
+  billingCycle: string;
+  amount: number;
+  currency: string;
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  jobPostingLimit: number;
+  jobPostingUsed: number;
+  featuredJobsLimit: number;
+  featuredJobsUsed: number;
+  resumeAccessLimit: number;
+  resumeAccessUsed: number;
+  highlightedJobsLimit: number;
+  highlightedJobsUsed: number;
+  isActive: boolean;
+  canceledAt?: string;
+  paymentId?: string;
+  createdAt: string;
+  updatedAt?: string;
+  employer?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  subscriptionPlan?: ISubscriptionPlan;
+}

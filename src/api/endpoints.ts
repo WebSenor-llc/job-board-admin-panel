@@ -144,6 +144,18 @@ const endpoints = {
     update: (id: string) => `/admin/filter-options/${id}`,
     delete: (id: string) => `/admin/filter-options/${id}`,
   },
+  subscriptions: {
+    plans: {
+      list: '/admin/subscription-plans',
+      create: '/admin/subscription-plans',
+      update: (id: string) => `/admin/subscription-plans/${id}`,
+      delete: (id: string) => `/admin/subscription-plans/${id}`,
+    },
+    active: {
+      list: '/admin/subscriptions',
+      cancel: (id: string) => `/admin/subscriptions/${id}/cancel`,
+    },
+  },
 };
 
 export default endpoints;
