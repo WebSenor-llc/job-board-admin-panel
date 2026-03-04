@@ -36,6 +36,7 @@ const VideoResumeListPage = lazy(() => import('@/pages/videoResume/VideoResumeLi
 // Master Data
 const SkillsListPage = lazy(() => import('@/pages/masterData/SkillsListPage'));
 const EducationPage = lazy(() => import('@/pages/masterData/EducationPage'));
+const JobFiltersListPage = lazy(() => import('@/pages/masterData/JobFiltersListPage'));
 
 // Moderation
 const ModerationListPage = lazy(() => import('@/pages/moderation/ModerationListPage'));
@@ -112,6 +113,10 @@ const allRoutes = [
   {
     path: routePath.MASTER_DATA.EDUCATION,
     element: <EducationPage />,
+  },
+  {
+    path: routePath.MASTER_DATA.JOB_FILTERS,
+    element: <JobFiltersListPage />,
   },
 
   // Redirect root to dashboard

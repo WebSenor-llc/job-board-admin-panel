@@ -50,6 +50,7 @@ const routePath = {
   MASTER_DATA: {
     SKILLS: '/master-data/skills',
     EDUCATION: '/master-data/education',
+    JOB_FILTERS: '/master-data/job-filters',
   },
 };
 

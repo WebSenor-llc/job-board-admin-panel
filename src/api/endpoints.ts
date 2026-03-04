@@ -128,6 +128,12 @@ const endpoints = {
     update: (id: string) => `/master-data/fields-of-study/${id}`,
     delete: (id: string) => `/master-data/fields-of-study/${id}`,
   },
+  filterOptions: {
+    list: '/admin/filter-options',
+    create: '/admin/filter-options',
+    update: (id: string) => `/admin/filter-options/${id}`,
+    delete: (id: string) => `/admin/filter-options/${id}`,
+  },
 };
 
 export default endpoints;

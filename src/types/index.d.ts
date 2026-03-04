@@ -299,3 +299,23 @@ export interface IVideoResume {
   videoRejectionReason: string | null;
   videoUploadedAt: string | null;
 }
+
+// Job Filter Option Types
+export type FilterGroup =
+  | 'job_type'
+  | 'experience_level'
+  | 'work_mode'
+  | 'salary_range'
+  | 'company_type'
+  | 'industry';
+
+export interface IFilterOption {
+  id: string;
+  group: FilterGroup;
+  label: string;
+  value: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt?: string;
+}
