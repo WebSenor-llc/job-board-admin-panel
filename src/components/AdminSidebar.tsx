@@ -155,6 +155,12 @@ const getAllAdminItems = (user: User | null) =>
           icon: Users,
           show: true,
         },
+        {
+          title: 'Manual Activation',
+          url: routePath.SUBSCRIPTIONS.MANUAL_ACTIVATE,
+          icon: UserPlus,
+          show: true,
+        },
       ],
     },
   ].filter((item) => item.show);

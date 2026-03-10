@@ -47,6 +47,7 @@ const ModerationListPage = lazy(() => import('@/pages/moderation/ModerationListP
 // Subscriptions
 const SubscriptionPlansPage = lazy(() => import('@/pages/subscriptions/SubscriptionPlansPage'));
 const SubscriptionsListPage = lazy(() => import('@/pages/subscriptions/SubscriptionsListPage'));
+const ManualActivationPage = lazy(() => import('@/pages/subscriptions/ManualActivationPage'));
 
 const allRoutes = [
   // Auth routes (no layout)
@@ -136,6 +137,10 @@ const allRoutes = [
   {
     path: routePath.SUBSCRIPTIONS.ACTIVE,
     element: <SubscriptionsListPage />,
+  },
+  {
+    path: routePath.SUBSCRIPTIONS.MANUAL_ACTIVATE,
+    element: <ManualActivationPage />,
   },
 
   // Redirect root to dashboard

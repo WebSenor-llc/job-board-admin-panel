@@ -155,6 +155,7 @@ const endpoints = {
       list: '/admin/subscriptions',
       cancel: (id: string) => `/admin/subscriptions/${id}/cancel`,
     },
+    manualActivate: '/subscriptions/admin/activate',
   },
 };
 

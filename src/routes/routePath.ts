@@ -58,6 +58,7 @@ const routePath = {
   SUBSCRIPTIONS: {
     PLANS: '/subscriptions/plans',
     ACTIVE: '/subscriptions/active',
+    MANUAL_ACTIVATE: '/subscriptions/manual-activate',
   },
 };
 
