@@ -146,10 +146,10 @@ const endpoints = {
   },
   subscriptions: {
     plans: {
-      list: '/admin/subscription-plans',
-      create: '/admin/subscription-plans',
-      update: (id: string) => `/admin/subscription-plans/${id}`,
-      delete: (id: string) => `/admin/subscription-plans/${id}`,
+      list: '/admin/subscriptions/plans',
+      create: '/admin/subscriptions/plans',
+      update: (id: string) => `/admin/subscriptions/plans/${id}`,
+      delete: (id: string) => `/admin/subscriptions/plans/${id}`,
     },
     active: {
       list: '/admin/subscriptions',

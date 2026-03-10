@@ -70,10 +70,15 @@ interface FilterOptionsResponse {
 const FILTER_GROUPS: { value: FilterGroup; label: string }[] = [
   { value: 'job_type', label: 'Job Type' },
   { value: 'experience_level', label: 'Experience Level' },
+  { value: 'location_type', label: 'Location Type' },
   { value: 'work_mode', label: 'Work Mode' },
+  { value: 'pay_rate', label: 'Pay Rate' },
+  { value: 'posted_within', label: 'Posted Within' },
   { value: 'salary_range', label: 'Salary Range' },
   { value: 'company_type', label: 'Company Type' },
   { value: 'industry', label: 'Industry' },
+  { value: 'department', label: 'Department' },
+  { value: 'sort_by', label: 'Sort By' },
 ];
 
 const JobFiltersListPage = () => {

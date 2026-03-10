@@ -329,9 +329,14 @@ export type FilterGroup =
   | 'job_type'
   | 'experience_level'
   | 'work_mode'
+  | 'location_type'
+  | 'pay_rate'
+  | 'posted_within'
   | 'salary_range'
   | 'company_type'
-  | 'industry';
+  | 'industry'
+  | 'department'
+  | 'sort_by';
 
 export interface IFilterOption {
   id: string;
